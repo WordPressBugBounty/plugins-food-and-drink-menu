@@ -1,0 +1,1 @@
+<p class="fdm-item-title"><?php echo esc_html( $this->title ); ?></p>
