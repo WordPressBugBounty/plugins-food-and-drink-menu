@@ -9,6 +9,9 @@ if ( !class_exists( 'fdmAdminOrders' ) ) {
  */
 class fdmAdminOrders {
 
+	// The WP_List_Table child class object of orders to display
+	public $orders_table;
+
 	public function __construct() {
 
 		// Add the admin menu

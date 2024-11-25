@@ -7,6 +7,12 @@
  */
 class fdmAdminOrderFormView extends fdmView {
 
+	// Pointer to the order being displayed
+	public $order;
+	
+	// Pointer to the order item being rendered
+	public $current_order_item;
+
 	/**
 	 * Render the view and enqueue required stylesheets
 	 * @since 2.4.1

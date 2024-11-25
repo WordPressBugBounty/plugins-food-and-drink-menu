@@ -9,8 +9,14 @@ if ( !class_exists( 'fdmOrderItem' ) ) {
  */
 class fdmOrderItem {
 
+	// The WP post object that corresponds to this order item
+	public $post;
+
 	// The ID for this order item
-	public $id;
+	public $id, $ID;
+
+	// The date this order item was created
+	public $date;
 
 	// The items that were included in this order
 	public $order_items = array();
@@ -35,6 +41,9 @@ class fdmOrderItem {
 
 	// The URL that the order was received from
 	public $permalink;
+
+	// The total cost of the order
+	public $order_total;
 
 	// The receipt id of the online order
 	public $receipt_id;

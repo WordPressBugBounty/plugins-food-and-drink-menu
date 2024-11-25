@@ -3,8 +3,8 @@ Contributors: rustaurius
 Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, online restaurant, restaurant order, mobile restaurant menu, food ordering, mobile food ordering, food menu, food order, food delivery, takeaway, food pickup, online food ordering
 Requires at Least: 6.0
-Tested Up To: 6.6
-Stable tag: 2.4.18
+Tested Up To: 6.7
+Stable tag: 2.4.19
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -301,7 +301,8 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 
 == Changelog ==
 
-= 2.4.18 (2024-07-16) =
-- Tested with WordPress 6.6.
+= 2.4.19 (2024-11-25) =
+- Removed several deprecated notices.
+- Tested with WordPress 6.7.
 
 [See changelog for all versions](https://www.fivestarplugins.com/changelogs/food-and-drink-menu.txt).

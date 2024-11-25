@@ -12,6 +12,9 @@ class fdmCartItem {
 	// The ID for the post corresponding to this item
 	public $id;
 
+	// The name of the item
+	public $title;
+
 	// Unique ID for the item in the cart, in case multiple are added separately
 	public $item_identifier;
 
