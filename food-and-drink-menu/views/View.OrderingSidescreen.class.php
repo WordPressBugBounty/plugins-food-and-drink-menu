@@ -118,13 +118,15 @@ class fdmViewOrderingSidescreen extends fdmView {
 		$price_suffix = ( $fdm_controller->settings->get_setting('fdm-currency-symbol-location') == 'after' ? $fdm_controller->settings->get_setting('fdm-currency-symbol') : '' );
 		
 		$fdm_ordering_data = array(
-			'singular_text' => $singular_text,
-			'plural_text' 	=> $plural_text,
-			'price_prefix' 	=> $price_prefix,
-			'price_suffix'	=> $price_suffix,
-			'minimum_order' => $fdm_controller->settings->get_setting( 'fdm-ordering-minimum-order' ),
-			'tax_rate' 		=> $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
-			'cart_location'	=> $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ),
+			'singular_text' 	=> $singular_text,
+			'plural_text' 		=> $plural_text,
+			'price_prefix' 		=> $price_prefix,
+			'price_suffix'		=> $price_suffix,
+			'minimum_order' 	=> $fdm_controller->settings->get_setting( 'fdm-ordering-minimum-order' ),
+			'tax_rate' 			=> $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
+			'cart_location'		=> $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ),
+			'enable_payment'		=> $fdm_controller->settings->get_setting( 'enable-payment' ),
+			'payment_optional'	=> $fdm_controller->settings->get_setting( 'payment-optional' )
 		);
 		wp_localize_script( 'fdm-ordering-js', 'fdm_ordering_data', $fdm_ordering_data );
 

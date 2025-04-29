@@ -178,7 +178,7 @@ function fdm_format_price( $price ) {
 function fdm_add_tax_to_price( $price ) {
 	global $fdm_controller;
 
-	$tax_rate = preg_replace( '/[^0-9.-]/', '', $fdm_controller->settings->get_setting( 'ordering-tax-rate' ) ) / 100;
+	$tax_rate = floatval( preg_replace( '/[^0-9.-]/', '', $fdm_controller->settings->get_setting( 'ordering-tax-rate' ) ) ) / 100;
 
 	return round( $price * ( 1 + $tax_rate ), 2 );
 }

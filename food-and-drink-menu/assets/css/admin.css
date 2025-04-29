@@ -681,14 +681,19 @@ body.admin_page_fdm-add-edit-order .fdm-admin-header-menu {
   display: none;
 }
 
-@media screen and (max-width: 1440px) {
+@media screen and (max-width: 1600px) {
   .fdm-admin-header-menu .nav-tab {
     padding: 12px 32px;
   }
 }
-@media screen and (max-width: 1150px) {
+@media screen and (max-width: 1300px) {
   .fdm-admin-header-menu .nav-tab {
     padding: 12px 18px;
+  }
+}
+@media screen and (max-width: 1100px) {
+  .fdm-admin-header-menu .nav-tab {
+    padding: 12px 12px;
   }
 }
 @media screen and (max-width: 800px) {

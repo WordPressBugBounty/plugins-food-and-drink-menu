@@ -53,6 +53,7 @@ jQuery(document).ready(function($) {
 				phone: phone,
 				note: note,
 				custom_fields: custom_fields,
+				nonce: fdm_stripe_payment.nonce,
 				post_status: 'draft',
 				action: 'fdm_submit_order'
 			});

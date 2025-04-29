@@ -48,6 +48,14 @@ class fdmOrderPayments {
 		if ( $fdm_controller->settings->get_setting( 'ordering-payment-gateway' ) == 'paypal' ) {
 
 			wp_enqueue_script( 'fdm-paypal-payment', FDM_PLUGIN_URL . '/assets/js/paypal-payment.js', array( 'jquery' ), FDM_VERSION, true );
+
+			wp_localize_script(
+				'fdm-paypal-payment',
+				'fdm_paypal_payment',
+				array(
+					'nonce'                 => wp_create_nonce( 'fdm-paypal-payment' ),
+				)
+			);
 		} 
 		else {
 			

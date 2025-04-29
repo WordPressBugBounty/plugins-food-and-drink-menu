@@ -245,10 +245,12 @@ jQuery(document).ready(function() {
 			jQuery( '.fdm-ordering-bottom-bar-toggle-inside span' ).addClass( 'dashicons-arrow-down-alt2' );
 		}
 
-		if( jQuery( '.fdm-payment-type-toggle[value="pay-online"]' ).is(':checked')) {
+		if (  fdm_ordering_data.enable_payment && ( jQuery( '.fdm-payment-type-toggle[value="pay-online"]' ).is( ':checked' ) || ! fdm_ordering_data.payment_optional ) ) {
+
 			jQuery( '.cart-location-bottom #fdm-ordering-contact-details, .cart-location-bottom #fdm-order-payment-toggle, .cart-location-bottom #fdm-order-payment-form-div' ).removeClass ( 'fdm-hidden' );
 		}
 		else {
+
 			jQuery( '.cart-location-bottom #fdm-ordering-contact-details, .cart-location-bottom #fdm-order-payment-toggle, .cart-location-bottom #fdm-order-submit' ).removeClass ( 'fdm-hidden' );
 		}
 

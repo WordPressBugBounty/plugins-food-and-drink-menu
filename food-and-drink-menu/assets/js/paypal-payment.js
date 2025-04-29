@@ -50,6 +50,7 @@ jQuery(document).ready(function($) {
 			note: note,
 			custom_fields: custom_fields,
 			post_status: 'draft',
+			nonce: fdm_paypal_payment.nonce,
 			action: 'fdm_submit_order'
 		});
 

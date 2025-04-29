@@ -183,7 +183,7 @@ class fdmAjax {
 	public function submit_order() {
 		global $fdm_controller;
 
-		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
+		if ( ! check_ajax_referer( 'fdm-ordering', 'nonce' ) and ! check_ajax_referer( 'fdm-paypal-payment', 'nonce' ) and ! check_ajax_referer( 'fdm-stripe-payment', 'nonce' ) ) {
 			fdmHelper::bad_nonce_ajax();
 		}
 
