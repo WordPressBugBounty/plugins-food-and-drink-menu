@@ -696,3 +696,18 @@ jQuery( document ).ready( function() {
 	jQuery( '.fdm-settings-preview' ).prevAll( '.sap-tutorial-toggle' ).hide();
 	jQuery( '.fdm-settings-preview .sap-tutorial-toggle' ).hide();
 });
+
+// NEW PLUGIN NOTICE
+
+jQuery( document ).ready( function( $ ) {
+
+  jQuery(document).on( 'click', '.ait-iat-new-plugin-notice .notice-dismiss', function( event ) {
+    var data = jQuery.param({
+      action: 'fdm_hide_new_plugin_notice',
+      plugin: 'ait_iat',
+      nonce: fdm_settings.nonce
+    });
+
+    jQuery.post( ajaxurl, data, function() {} );
+  });
+});

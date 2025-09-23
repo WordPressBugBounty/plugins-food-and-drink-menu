@@ -4,7 +4,7 @@ Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, online restaurant, restaurant order, mobile restaurant menu, food ordering, mobile food ordering, food menu, food order, food delivery, takeaway, food pickup, online food ordering
 Requires at Least: 6.0
 Tested Up To: 6.8
-Stable tag: 2.4.20
+Stable tag: 2.4.21
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -300,6 +300,9 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.4.21 (2025-09-23) =
+- Updated admin notice capabilities.
 
 = 2.4.20 (2025-04-29) =
 - Fixed ordering submit button not showing in certain cases.

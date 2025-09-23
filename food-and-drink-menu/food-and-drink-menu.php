@@ -3,7 +3,7 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.4.20
+ * Version: 2.4.21
  * Requires at least: 6.0
  * Author: Five Star Plugins
  * Author URI: https://www.fivestarplugins.com/
@@ -43,7 +43,7 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.4.20' );
+		define( 'FDM_VERSION', '2.4.21' );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -143,7 +143,7 @@ class fdmFoodAndDrinkMenu {
 		register_activation_hook( __FILE__, array( $this, 'set_update_transient_on_plugin_activation' ) );
 
 		// Load admin assets
-		add_action( 'admin_notices', array($this, 'display_header_area'));
+		add_action( 'admin_notices', array($this, 'display_header_area'), 99);
 		// add_action( 'admin_print_scripts-post-new.php', array( $this, 'enqueue_admin_assets' ) );
 		// add_action( 'admin_print_scripts-post.php', array( $this, 'enqueue_admin_assets' ) );
 		// add_action( 'admin_print_scripts-edit.php', array( $this, 'enqueue_admin_assets' ) );
@@ -154,6 +154,10 @@ class fdmFoodAndDrinkMenu {
 		// Handle the helper notice
 		add_action( 'admin_notices', array( $this, 'maybe_display_helper_notice' ) );
 		add_action( 'wp_ajax_fdm_hide_helper_notice', array( $this, 'hide_helper_notice' ) );
+
+		// New Plugin Notice
+		add_action( 'admin_notices', array( $this, 'maybe_display_new_plugin_notice' ) );
+		add_action( 'wp_ajax_fdm_hide_new_plugin_notice', array( $this, 'hide_new_plugin_notice' ) );
 
 		// Load Gutenberg blocks
 		require_once( FDM_PLUGIN_DIR . '/includes/class-blocks.php' );
@@ -774,6 +778,59 @@ class fdmFoodAndDrinkMenu {
 		}
 	
 		set_transient( 'fsp-helper-notice-dismissed', true, 3600*24*7 );
+	
+		die();
+	}
+
+	public function maybe_display_new_plugin_notice() {
+
+		$screen = get_current_screen();
+	    if (!isset($screen->id) || strpos($screen->id, 'fdm-menu_page') === false) { return; }
+	
+		if ( get_transient( 'fdm-ait-iat-plugin-notice-dismissed' ) ) { return; }
+	
+		// October 17th, 2025
+		if ( time() > 1760759940 ) { return; }
+	
+		?>
+	
+		<div class='notice notice-error is-dismissible ait-iat-new-plugin-notice'>
+				
+			<div class='fdm-new-plugin-notice-img'>
+				<img src='<?php echo FDM_PLUGIN_URL . '/assets/img/ait-iat-plugin-icon.png' ; ?>' />
+			</div>
+	
+			<div class='fdm-new-plugin-notice-txt'>
+				<p><?php _e( 'Want to improve your search rankings? Try our new <strong>AI Image Alt Text</strong> plugin!', 'food-and-drink-menu' ); ?></p>
+				<p><?php echo sprintf( __( 'As a thank you to our customers, for a limited time you can get a <strong>free pro license</strong>! Try the <a target=\'_blank\' href=\'%s\'>free version</a> today or use code <code>early_adopter_pro</code> to <a target=\'_blank\' href=\'%s\'>get your pro version license</a>!', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ai-image-alt-text' ), 'https://www.wpaiplugins.dev/wordpress-image-alt-text-ai-plugin/' ); ?></p>
+			</div>
+	
+			<div class='fdm-clear'></div>
+	
+		</div>
+	
+		<?php 
+	}
+	
+	public function hide_new_plugin_notice() {
+		global $fdm_controller;
+	
+		// Authenticate request
+		if (
+			! check_ajax_referer( 'fdm-admin', 'nonce' )
+			||
+			! current_user_can( 'manage_options' )
+		) {
+			wp_send_json_error(
+				array(
+					'error' => 'loggedout',
+					'msg' => sprintf( __( 'You have been logged out. Please %slogin again%s.', 'food-and-drink-menu' ), '<a href="' . wp_login_url( admin_url( 'admin.php?page=fdm-dashboard' ) ) . '">', '</a>' ),
+				)
+			);
+	
+		}
+	
+		set_transient( 'fdm-ait-iat-plugin-notice-dismissed', true, 3600*24*7 );
 	
 		die();
 	}
