@@ -23,7 +23,7 @@ class fdmOrdersTable extends WP_List_Table {
 	 * @var string
 	 * @since 2.1.0
 	 */
-	public $per_page = 3;
+	public $per_page = 30;
 
 	/**
 	 * URL of this page
@@ -376,6 +376,10 @@ class fdmOrdersTable extends WP_List_Table {
 			$columns['payment_amount'] = __( 'Payment Amount', 'food-and-drink-menu' );
 		}
 
+		if ( $fdm_controller->settings->get_setting( 'fdm-enable-tipping' ) ) {
+			$columns['tip_amount'] = __( 'Tip Amount', 'food-and-drink-menu' );
+		}
+
 		return $columns;
 	}
 
@@ -474,6 +478,14 @@ class fdmOrdersTable extends WP_List_Table {
 			case 'payment_amount' :
 
 				$value = esc_html( fdm_format_price( $order->payment_amount ) );
+
+				$value .= ( isset( $order->stripe_payment_hold_status ) and $order->stripe_payment_hold_status == 'hold-placed' ) ? __( ' (on hold)', 'food-and-drink-menu' ) : '';
+				
+				break;				
+
+			case 'payment_amount' :
+
+				$value = esc_html( fdm_format_price( $order->tip_amount ) );
 
 				$value .= ( isset( $order->stripe_payment_hold_status ) and $order->stripe_payment_hold_status == 'hold-placed' ) ? __( ' (on hold)', 'food-and-drink-menu' ) : '';
 				

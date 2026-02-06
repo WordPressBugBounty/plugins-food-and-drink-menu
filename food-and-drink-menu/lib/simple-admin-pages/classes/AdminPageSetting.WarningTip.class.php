@@ -1,6 +1,4 @@
-
 <?php
-
 /**
  * Register, display and save a warning/tip in the admin menu
  *
@@ -8,7 +6,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingWarningTip_2_6_19 extends sapAdminPageSetting_2_6_19 {
+class sapAdminPageSettingWarningTip_2_7_3 extends sapAdminPageSetting_2_7_3 {
 
 	public $sanitize_callback = 'sanitize_text_field';
 

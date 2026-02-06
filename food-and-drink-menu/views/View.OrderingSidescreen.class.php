@@ -61,12 +61,55 @@ class fdmViewOrderingSidescreen extends fdmView {
 
 	/**
 	 * Add class 'fdm-hidden' if no tax rate is set
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 */
 	public function maybe_add_hidden_to_tax_row_item() {
 		global $fdm_controller;
 
 		return empty( $fdm_controller->settings->get_setting( 'ordering-tax-rate' ) ) ? ' class="fdm-hidden"' : '';
+	}
+
+	/**
+	 * Get valid options for the pickup time dropdown
+	 * @since 2.5.0
+	 */
+	public function get_pickup_time_options() {
+		global $fdm_controller;
+
+		$valid_times = array(
+			'Immediately'
+		);
+
+		$start_time = fdm_time_to_decimal();
+
+		$closing_time = $fdm_controller->orders->get_ordering_close_time();
+
+		for ( $i = $start_time; $i < $closing_time; $i += 0.25 ) {
+			
+			$valid_times[] = sprintf( '%02d:%02d', floor( $i ), ( $i - floor( $i ) ) * 60 );
+		}
+
+		// Remove the first 15 minute interval
+		unset( $valid_times[ 1 ] );
+
+		return apply_filters( 'fdm_pickup_time_options', $valid_times );
+	}
+
+	/**
+	 * True if one or more discount(s) exist and are enabled, false otherwise
+	 * @since 2.5.0
+	 */
+	public function discounts_exist() {
+		global $fdm_controller;
+
+		$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
+
+		foreach ( $discounts as $discount ) {
+
+			if ( $discount->enabled ) { return true; }
+		}
+
+		return false;
 	}
 
 	/**
@@ -123,6 +166,7 @@ class fdmViewOrderingSidescreen extends fdmView {
 			'price_prefix' 		=> $price_prefix,
 			'price_suffix'		=> $price_suffix,
 			'minimum_order' 	=> $fdm_controller->settings->get_setting( 'fdm-ordering-minimum-order' ),
+			'delivery_minimum' 	=> $fdm_controller->settings->get_setting( 'ordering-delivery-minimum' ),
 			'tax_rate' 			=> $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
 			'cart_location'		=> $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ),
 			'enable_payment'		=> $fdm_controller->settings->get_setting( 'enable-payment' ),

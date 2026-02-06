@@ -1,5 +1,5 @@
 <?php
-if ( !class_exists( 'sapLibrary_2_6_19' ) ) {
+if ( !class_exists( 'sapLibrary_2_7_3' ) ) {
 /**
  * This library class loads and provides access to the correct version of the
  * Simple Admin Pages library.
@@ -7,10 +7,10 @@ if ( !class_exists( 'sapLibrary_2_6_19' ) ) {
  * @since 1.0
  * @package Simple Admin Pages
  */
-class sapLibrary_2_6_19 {
+class sapLibrary_2_7_3 {
 
 	// Version of the library
-	private $version = '2.6.19';
+	private $version = '2.7.3';
 
 	// A full URL to the library which is used to correctly link scripts and
 	// stylesheets.
@@ -37,7 +37,8 @@ class sapLibrary_2_6_19 {
 
 	public $available_themes = [
 		'purple',
-		'blue'
+		'blue',
+		'ait'
 	];
 
 	public $current_theme = 'blue';
@@ -49,7 +50,7 @@ class sapLibrary_2_6_19 {
 	public function __construct( $args ) {
 
 		if ( ! defined( 'SAP_VERSION' ) ) {
-			define( 'SAP_VERSION', '2.6.19' );
+			define( 'SAP_VERSION', '2.7.3' );
 		}
 
 		// If no URL path to the library is passed, we won't be able to add the
@@ -490,6 +491,15 @@ class sapLibrary_2_6_19 {
 						wp_enqueue_style(
 							'sap-admin-settings-css-purple-' . $this->version, 
 							$this->lib_url . 'css/admin-settings-purple.css', 
+							array(), 
+							$this->version
+						);
+						break;
+
+					case 'ait':
+						wp_enqueue_style(
+							'sap-admin-settings-css-ait-' . $this->version, 
+							$this->lib_url . 'css/admin-settings-ait.css', 
 							array(), 
 							$this->version
 						);

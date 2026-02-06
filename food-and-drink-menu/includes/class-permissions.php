@@ -33,7 +33,8 @@ class fdmPermissions {
 			"related_items" => 2,
 			"import" => 2,
 			"export" => 2,
-			"ordering" => 3,
+			"ordering" => 2,
+			"order_advanced" => 3,
 			"custom_fields" => 2,
 			"api_usage"	=> 3
 		);

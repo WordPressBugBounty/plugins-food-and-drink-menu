@@ -101,6 +101,7 @@ class fdmSettings {
 
 			'fdm-enable-ordering-progress-display' 	=> false,
 			'fdm-ordering-order-delete-time'		=> 7,
+			'order-discount-codes'					=> array(),
 			'ordering-tax-rate'						=> 0,
 			'ordering-payment-gateway'				=> 'paypal',
 			'ordering-payment-mode'					=> 'live',
@@ -111,6 +112,12 @@ class fdmSettings {
 			'label-order-success'					=> __( 'Order was successfully created', 'food-and-drink-menu' ),
 			'label-order-payment-success'			=> __( 'You have successfully made a payment of %s', 'food-and-drink-menu' ),
 			'label-order-payment-failed'			=> __( 'Your payment was declined with the following error code %s', 'food-and-drink-menu' ),
+
+			'label-discount-not-enabled'			=> __( 'Discount is not currently enabled.', 'food-and-drink-menu' ),
+			'label-discount-not-datetime'			=> __( 'Discount is not valid at the current time.', 'food-and-drink-menu' ),
+			'label-discount-minimum-not-met'		=> __( 'Order minimum has not been met.', 'food-and-drink-menu' ),
+			'label-discount-not-found'				=> __( 'Discount code not found.', 'food-and-drink-menu' ),
+			'label-discount-success'				=> __( 'Discount has been successfully applied to your order.', 'food-and-drink-menu' ),
 
 			// Payment defaults
 			'paypal-email'							=> get_option( 'admin_email' ),
@@ -262,7 +269,7 @@ Click on the following link to accept the order: {accept_link}
 		// Insantiate the Simple Admin Library so that we can add a settings page
 		$sap = sap_initialize_library(
 			array(
-				'version'		=> '2.6.19', // Version of the library
+				'version'		=> '2.7.3', // Version of the library
 				'lib_url'		=> FDM_PLUGIN_URL . '/lib/simple-admin-pages/', // URL path to sap library
 				'theme'			=> 'blue',
 			)
@@ -290,6 +297,7 @@ Click on the following link to accept the order: {accept_link}
 				'title'				=> __( 'Basic', 'food-and-drink-menu' ),
 				'is_tab'			=> true,
 				'tutorial_yt_id'	=> 'H2F8tEshWKw',
+				'icon'				=> 'text',
 			)
 		);
 
@@ -424,7 +432,7 @@ Click on the following link to accept the order: {accept_link}
 			array(
 				'id'			=> 'fdm-disable-microdata',
 				'title'			=> __( 'Disable Microdata', 'food-and-drink-menu' ),
-				'description'	=> __( 'Disable the structured data that is automatically added to the menu page. Structured data is used by search engines and other services to intepret your menu.', 'food-and-drink-menu' )
+				'description'	=> __( 'Disable the structured data that is automatically added to the menu page. Structured data is used by search engines and other services to interpret your menu.', 'food-and-drink-menu' )
 			)
 		);
 		$sap->add_setting(
@@ -583,7 +591,8 @@ Click on the following link to accept the order: {accept_link}
 	        'title'  				=> __( 'Advanced', 'food-and-drink-menu' ),
 	        'is_tab' 				=> true,
 	        'tutorial_yt_id'		=> 'lWXlDd-eQcM',
-	        'show_submit_button' 	=> $this->show_submit_button( 'advanced' )
+	        'show_submit_button' 	=> $this->show_submit_button( 'advanced' ),
+			'icon'					=> 'awards',
 	      )
 	    );
 	    $sap->add_section(
@@ -603,7 +612,8 @@ Click on the following link to accept the order: {accept_link}
 	        'title'  				=> __( 'Ordering', 'food-and-drink-menu' ),
 	        'is_tab' 				=> true,
 	        'tutorial_yt_id'		=> 'sqag_bMMOeo',
-	        'show_submit_button' 	=> $this->show_submit_button( 'ordering' )
+	        'show_submit_button' 	=> $this->show_submit_button( 'ordering' ),
+			'icon'					=> 'cart'
 	      )
 	    );
 	    $sap->add_section(
@@ -623,7 +633,9 @@ Click on the following link to accept the order: {accept_link}
 	        'title'  				=> __( 'Custom Fields', 'food-and-drink-menu' ),
 	        'is_tab' 				=> true,
 	        'tutorial_yt_id'		=> 'j3-KDFeUlX0',
-	        'show_submit_button' 	=> $this->show_submit_button( 'custom_fields' )
+	        'show_submit_button' 	=> $this->show_submit_button( 'custom_fields' ),
+			'icon'					=> 'editor-insertmore'
+
 	      )
 	    );
 	    $sap->add_section(
@@ -643,7 +655,8 @@ Click on the following link to accept the order: {accept_link}
 		    'title'  				=> __( 'Labelling', 'food-and-drink-menu' ),
 		    'is_tab' 				=> true,
 	        'tutorial_yt_id'		=> 'VUhWNXoXLPY',
-		    'show_submit_button' 	=> $this->show_submit_button( 'labelling' )
+		    'show_submit_button' 	=> $this->show_submit_button( 'labelling' ),
+			'icon'					=> 'translation'
 		  )
 		);
 		$sap->add_section(
@@ -663,7 +676,8 @@ Click on the following link to accept the order: {accept_link}
 	        'title'  				=> __( 'Styling', 'food-and-drink-menu' ),
 	        'is_tab' 				=> true,
 	        'tutorial_yt_id'		=> 'QqQsKaGTdUY',
-	        'show_submit_button' 	=> $this->show_submit_button( 'styling' )
+	        'show_submit_button' 	=> $this->show_submit_button( 'styling' ),
+			'icon'					=> 'welcome-widgets-menus'
 	      )
 	    );
 	    $sap->add_section(

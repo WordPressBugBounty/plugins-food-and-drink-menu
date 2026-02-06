@@ -30,6 +30,9 @@ class fdmAjax {
 		add_action( 'wp_ajax_fdm_clear_cart', array( $this, 'clear_cart' ) );
 		add_action( 'wp_ajax_nopriv_fdm_clear_cart', array( $this, 'clear_cart' ) );
 
+		add_action( 'wp_ajax_fdm_check_discount_code', array( $this, 'check_discount_code' ) );
+		add_action( 'wp_ajax_nopriv_fdm_check_discount_code', array( $this, 'check_discount_code' ) );
+
 		add_action( 'wp_ajax_fdm_submit_order', array( $this, 'submit_order' ) );
 		add_action( 'wp_ajax_nopriv_fdm_submit_order', array( $this, 'submit_order' ) );
 
@@ -146,6 +149,16 @@ class fdmAjax {
 
 		wp_update_post( $args );
 
+		$order = new fdmOrderItem();
+
+		$order->load( $order_id );
+
+		$order->calculate_order_subtotal();
+
+		$order->update_admin_order_total();
+
+		$order->save_order_post();
+
 		fdm_load_view_files();
 
 		$admin_view = new fdmAdminOrderFormView( array() );
@@ -180,10 +193,78 @@ class fdmAjax {
 		$fdm_controller->cart->clear_cart();
 	}
 
+	/**
+	 * Check whether a discount code is valid, and return the amount/type if it is
+	 * @since 2.5.0
+	 */
+	public function check_discount_code() {
+		global $fdm_controller;
+
+		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
+			fdmHelper::bad_nonce_ajax();
+		}
+
+		$discount_code = trim( sanitize_text_field( $_POST['discount_code'] ) );
+		$order_value = floatval( $_POST['order_value'] );
+
+		$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
+
+		foreach ( $discounts as $discount ) {
+
+			if ( $discount->code != $discount_code ) { continue; }
+
+			if ( ! $discount->enabled ) {
+
+				wp_send_json_error(
+					array(
+						'error'		=> 'discount_code_not_enabled',
+						'msg'		=> esc_html( $fdm_controller->settings->get_setting( 'label-discount-not-enabled' ) ),
+					)
+				);
+			}
+
+			if ( ( ! empty( $discount->start_datetime ) and strtotime( $discount->start_datetime ) > time() ) or ( ! empty( $discount->end_datetime ) and strtotime( $discount->end_datetime ) < time() ) ) {
+			
+				wp_send_json_error(
+					array(
+						'error'		=> 'discount_code_not_datetime',
+						'msg'		=> esc_html( $fdm_controller->settings->get_setting( 'label-discount-not-datetime' ) ),
+					)
+				);
+			}
+
+			if ( $discount->minimum > $order_value ) {
+
+				wp_send_json_error(
+					array(
+						'error'		=> 'discount_code_minimum_not_met',
+						'msg'		=> esc_html( $fdm_controller->settings->get_setting( 'label-discount-minimum-not-met' ) ),
+					)
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'discount_amount' 	=> $discount->amount,
+					'discount_type'		=> $discount->type,
+					'discount_minimum'	=> $discount->minimum,
+					'msg'				=> esc_html( $fdm_controller->settings->get_setting( 'label-discount-success' ) ),
+				)
+			);
+		}
+
+		wp_send_json_error(
+			array(
+				'error'		=> 'discount_code_not_found',
+				'msg'		=> esc_html( $fdm_controller->settings->get_setting( 'label-discount-not-found' ) ),
+			)
+		);
+	}
+
 	public function submit_order() {
 		global $fdm_controller;
 
-		if ( ! check_ajax_referer( 'fdm-ordering', 'nonce' ) and ! check_ajax_referer( 'fdm-paypal-payment', 'nonce' ) and ! check_ajax_referer( 'fdm-stripe-payment', 'nonce' ) ) {
+		if ( ! check_ajax_referer( 'fdm-ordering', 'nonce', false ) and ! check_ajax_referer( 'fdm-paypal-payment', 'nonce', false ) and ! check_ajax_referer( 'fdm-stripe-payment', 'nonce', false ) ) {
 			fdmHelper::bad_nonce_ajax();
 		}
 
@@ -193,6 +274,10 @@ class fdmAjax {
 			'email'			=> sanitize_text_field( $_POST['email'] ),
 			'phone'			=> sanitize_text_field( $_POST['phone'] ),
 			'note' 			=> sanitize_text_field( $_POST['note'] ),
+			'pickup_time'	=> sanitize_text_field( $_POST['pickup_time'] ),
+			'delivery'		=> sanitize_text_field( $_POST['delivery'] ),
+			'tip_amount'	=> sanitize_text_field( $_POST['tip_amount'] ),
+			'discount_code'	=> sanitize_text_field( $_POST['discount_code'] ),
 			'custom_fields' => array()
 		);
 

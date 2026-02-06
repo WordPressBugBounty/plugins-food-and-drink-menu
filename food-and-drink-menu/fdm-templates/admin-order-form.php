@@ -37,6 +37,26 @@
 
 					</div>
 
+					<?php if ( ! empty( $this->get_option( 'fdm-enable-pickup-time' ) ) ) { ?>
+
+						<div class='fdm-field'>
+
+							<div class='fdm-admin-label'>
+	
+								<label for="fdm_pickup_time">
+									<?php _e( 'Order Time', 'food-and-drink-menu' ); ?>
+								</label>
+	
+							</div>
+	
+							<div class='fdm-admin-input'>
+								<input type='text' name="fdm_pickup_time" value="<?php echo ( ! empty( $this->order->pickup_time ) ? esc_attr( $this->order->pickup_time ) : '0' ); ?>" />
+							</div>
+	
+						</div>
+
+					<?php } ?>
+
 					<div class='fdm-field'>
 
 						<div class='fdm-admin-label'>
@@ -277,14 +297,42 @@
 
 						<div class='fdm-admin-label'>
 
-							<label for="fdm_order_total">
-								<?php _e( 'Order Total', 'food-and-drink-menu' ); ?>
+							<label for="fdm_order_totals">
+								<?php _e( 'Order Totals', 'food-and-drink-menu' ); ?>
 							</label>
 
 						</div>
 
+						<?php 
+
+							// Set payment amounts if they don't already exist
+							//if ( empty( $this->order->order_total ) ) { 
+								$this->order->set_payment_amounts();
+
+							//}
+						?>
+
 						<div class='fdm-admin-input'>
-							<span id='fdm_order_total'><?php echo esc_html( fdm_format_price( $this->order->get_order_total_tax_in() ) ); ?></span>
+							<div class='fdm-admin-order-totals'>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_subtotal'>
+									<span><?php esc_html_e( 'Subtotal', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->subtotal ) ); ?>
+								</div>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_discount'>
+									<span><?php esc_html_e( 'Discount', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->discount_amount ) ); ?>
+								</div>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_delivery_fee'>
+									<span><?php esc_html_e( 'Delivery', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->delivery_amount ) ); ?>
+								</div>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_tax'>
+									<span><?php esc_html_e( 'Tax', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->tax_amount ) ); ?>
+								</div>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_tip'>
+									<span><?php esc_html_e( 'Tip', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->tip_amount ) ); ?>
+								</div>
+								<div class='fdm-admin-order-totals-field' id='fdm_order_total'>
+									<span><?php esc_html_e( 'Total', 'food-and-drink-menu' ); ?></span> <?php echo esc_html( fdm_format_price( $this->order->order_total ) ); ?>
+								</div>
+							</div>
 						</div>
 
 					</div>
@@ -304,6 +352,51 @@
 						</div>
 
 					</div>
+
+					<?php if ( ! empty( $this->get_option( 'fdm-enable-tipping' ) ) ) { ?>
+
+						<div class='fdm-field'>
+
+							<div class='fdm-admin-label'>
+	
+								<label for="fdm_order_tip">
+									<?php _e( 'Order Tip', 'food-and-drink-menu' ); ?>
+								</label>
+	
+							</div>
+	
+							<div class='fdm-admin-input'>
+								<input type='text' name="fdm_tip_amount" value="<?php echo ( ! empty( $this->order->tip_amount ) ? esc_attr( $this->order->tip_amount ) : '0' ); ?>" />
+							</div>
+	
+						</div>
+
+					<?php } ?>
+
+					<?php 
+
+						$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
+
+						if ( ! empty( $discounts ) ) { 
+					?>
+
+						<div class='fdm-field'>
+
+							<div class='fdm-admin-label'>
+	
+								<label for="fdm_discount_amount">
+									<?php _e( 'Order Discount', 'food-and-drink-menu' ); ?>
+								</label>
+	
+							</div>
+	
+							<div class='fdm-admin-input'>
+								<input type='text' name="fdm_discount_amount" value="<?php echo ( ! empty( $this->order->discount_amount ) ? esc_attr( $this->order->discount_amount ) : '0' ); ?>" />
+							</div>
+	
+						</div>
+
+					<?php } ?>
 
 					<?php if ( ! empty( $this->order->receipt_id ) ) { ?>
 

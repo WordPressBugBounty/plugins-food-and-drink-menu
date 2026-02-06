@@ -3,8 +3,8 @@ Contributors: rustaurius
 Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, online restaurant, restaurant order, mobile restaurant menu, food ordering, mobile food ordering, food menu, food order, food delivery, takeaway, food pickup, online food ordering
 Requires at Least: 6.0
-Tested Up To: 6.8
-Stable tag: 2.4.21
+Tested Up To: 6.9
+Stable tag: 2.5.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -301,19 +301,21 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 
 == Changelog ==
 
-= 2.4.21 (2025-09-23) =
-- Updated admin notice capabilities.
-
-= 2.4.20 (2025-04-29) =
-- Fixed ordering submit button not showing in certain cases.
-- Styling fix for admin menu that was wrapping on certain screen sizes.
-- Tested with WordPress 6.8
-
-= 2.4.19 (2024-11-25) =
-- Removed several deprecated notices.
-- Tested with WordPress 6.7.
-
-= 2.4.18 (2024-07-16) =
-- Tested with WordPress 6.6.
+= 2.5.0 (2026-01-08) =
+- **IMPORTANT NOTE: Significant updates have been made to the default "Classic Style" menu style and to the "Image Style" menu style. If you are using either of these menu styles, we highly recommend that you install the update on a staging environment first and test with with the updated style, especially if you have customized the layout and/or CSS.**
+- Refresh of the "Classic Style" menu style.
+- Refresh of the "Image Style" menu style.
+- Refresh of the side ordering cart design.
+- Refresh of the menu item lightbox design.
+- Redesign of the plugin admin.
+- Added: You can now create discount codes that can be used when placing orders.
+- Added: New option to let visitors add a tip amount to their order.
+- Added: New order time option to let visitors select when their order should be prepared for.
+- Added: New option to let visitors select whether or not an order is for delivery, with secondary options to specify a delivery fee and a minimum order amount for delivery.
+- Added: The admin can now specify an ETA for pickup or delivery orders.
+- Added: "Add to Cart" button now also displays in the lightbox.
+- Added: You can now export orders.
+- Changed: Order payment amount is now broken down into its portions (subtotal, tax, tip, delivery, total), so that it's easier to understand what is being paid for.
+- Changed: Reorganized several ordering settings/options.
 
 [See changelog for all versions](https://www.fivestarplugins.com/changelogs/food-and-drink-menu.txt).

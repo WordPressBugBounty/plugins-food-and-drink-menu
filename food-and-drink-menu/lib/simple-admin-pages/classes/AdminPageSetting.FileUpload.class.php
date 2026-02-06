@@ -15,7 +15,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingFileUpload_2_6_19 extends sapAdminPageSetting_2_6_19 {
+class sapAdminPageSettingFileUpload_2_7_3 extends sapAdminPageSetting_2_7_3 {
 
 	public $sanitize_callback = 'esc_url_raw';
 
@@ -45,7 +45,7 @@ class sapAdminPageSettingFileUpload_2_6_19 extends sapAdminPageSetting_2_6_19 {
 			<span class="sap-file-upload-preview">
 
 				<span class="sap-file-upload-preview-label">
-					<?php _e( 'Current image:', 'simple-admin-pages' ); ?>
+					<?php esc_html_e( 'Current image:', 'simple-admin-pages' ); ?>
 				</span>
 
 				<span class="sap-file-upload-preview-value">
@@ -58,7 +58,7 @@ class sapAdminPageSettingFileUpload_2_6_19 extends sapAdminPageSetting_2_6_19 {
 
 			<input name="<?php echo esc_attr( $this->get_input_name() ); ?>" type="hidden" id="<?php echo esc_attr( $this->get_input_name() ); ?>" class="file-upload" value="<?php echo esc_attr( $this->value ); ?>" />
 
-			<input class="button sap-file-upload-button" type="button" value="<?php _e( 'Upload Image', 'simple-admin-pages' ); ?>" />
+			<input class="button sap-file-upload-button" type="button" value="<?php esc_html_e( 'Upload Image', 'simple-admin-pages' ); ?>" />
 
 		</fieldset>
 

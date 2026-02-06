@@ -421,7 +421,9 @@ jQuery(document).ready(function ($) {
 			var scheduler = $(this).parent().siblings( '.sap-scheduler' );
 			var scheduler_id = scheduler.attr( 'id' );
 			var scheduler_settings = sap_scheduler.settings[ scheduler_id ];
-			scheduler.append( scheduler_settings.template.replace( /\[0\]/g, '[' + scheduler.children( '.sap-scheduler-rule' ).length + ']' ) );
+			var next_rule_id = scheduler.data( 'next_rule_id' );
+			scheduler.data( 'next_rule_id', next_rule_id + 1 );
+			scheduler.append( scheduler_settings.template.replace( /\[0\]/g, '[' + next_rule_id + ']' ) );
 			sap_scheduler_register_datepicker( scheduler.last( '#' + scheduler_id + ' .sap-scheduler-rule' ).find( '.sap-scheduler-date-input input[type="text"]' ) );
 			sap_scheduler_register_datepicker( scheduler.last( '#' + scheduler_id + ' .sap-scheduler-rule' ).find( '.sap-scheduler-date-range-input input[type="text"]' ) );
 			sap_scheduler_register_timepicker( scheduler.last( '#' + scheduler_id + ' .sap-scheduler-rule' ).find( '.sap-scheduler-time-input input[type="text"]' ) );

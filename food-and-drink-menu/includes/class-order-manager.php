@@ -49,15 +49,21 @@ class fdmOrderManager {
 	}
 
 	public function submit_order( $args ) {
-		
 		global $fdm_controller;
 
 		$args['order_items'] 			= $fdm_controller->cart->get_cart_items();
 		$args['edit_confirmation_code']	= $this->return_random_string();
 
+		if ( ! empty( $args['devlivery'] ) and ! empty( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ) {
+
+			$args['delivery_amount'] = floatval( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) );
+		}
+
 		if ( ! isset( $args['post_status'] ) ) { $args['post_status'] = 'fdm_order_received'; }
 
 		$order = new fdmOrderItem( $args );
+
+		$order->set_payment_amounts();
 
 		$order->save_order_post(); 
 
@@ -272,6 +278,52 @@ class fdmOrderManager {
 		}
 
 		return $ordering_open;
+	}
+
+	public function get_ordering_close_time() {
+		global $fdm_controller;
+
+		$schedule_open 	= is_array( $fdm_controller->settings->get_setting( 'schedule-open' ) ) ? $fdm_controller->settings->get_setting( 'schedule-open' ) : array();
+		$exceptions 	= is_array( $fdm_controller->settings->get_setting( 'schedule-closed' ) ) ? $fdm_controller->settings->get_setting( 'schedule-closed' ) : array();
+
+		if ( empty( $schedule_open ) ) { return 0; }
+
+		$timezone = wp_timezone(); 
+		$gmt_seconds_offset = $timezone->getOffset( new DateTime );
+
+		$today_weekday = strtolower( date( 'l', time() + $gmt_seconds_offset ) ); 
+		$today_date = date( 'Y-m-d ', time() + $gmt_seconds_offset ); 
+
+		$closing_time = 0;
+
+		foreach ( $schedule_open as $rule ) {
+			if ( !empty( $rule['weekdays'] ) ) {
+				foreach ( $rule['weekdays'] as $weekday => $value ) { 
+					
+					if ( $weekday == $today_weekday and $value ) {
+						if ( empty( $rule['time'] ) ) { $closing_time = 24; }						
+						else { 
+							$closing_time = fdm_time_to_decimal( strtotime( $today_date . $rule['time']['end'] ) );
+						}
+					}
+
+				}
+			}
+		}
+
+		if ( ! is_array( $exceptions ) ) { return $closing_time; }
+
+		foreach ( $exceptions as $exception ) {
+			if ( !empty( $exception['date'] ) and date('Y-m-d ', strtotime( $exception['date'] ) ) == $today_date ) {
+				
+				if ( empty( $exception['time'] ) ) { $closing_time = 0; }						
+				else {
+					$closing_time = fdm_time_to_decimal( strtotime( $today_date . $exception['time']['end'] ) );
+				}
+			}
+		}
+
+		return $closing_time;
 	}
 
 	public function return_random_string( $length = 4 ) {

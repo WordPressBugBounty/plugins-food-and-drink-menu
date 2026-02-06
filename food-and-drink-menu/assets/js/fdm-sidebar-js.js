@@ -1,4 +1,6 @@
 jQuery(document).ready(function(){
+
+	jQuery('.fdm-menu-sidebar-section-title').attr('tabindex', '0');
 	jQuery('.fdm-menu-sidebar-section-title:first-of-type').addClass('fdm-menu-sidebar-section-title-selected');
 	jQuery('.fdm-menu-sidebar-section-description:nth-of-type(2)').removeClass('fdm-hidden');
 

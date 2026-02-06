@@ -1,17 +1,17 @@
 jQuery( document ).ready( function() {
 
 	fdm_section_image_text_position();
-	fdm_image_style_image_height();
+	//fdm_image_style_image_height();
 
 	jQuery(window).resize( function() {
 
 		fdm_section_image_text_position();
-		fdm_image_style_image_height();
+		//fdm_image_style_image_height();
 	});
 
 	// run 3 seconds after page load, for the WordPress editor preview area
 	setTimeout( fdm_section_image_text_position, 3000 );
-	setTimeout( fdm_image_style_image_height, 3000 );
+	//setTimeout( fdm_image_style_image_height, 3000 );
 });
 
 function fdm_section_image_text_position() {
@@ -41,8 +41,28 @@ function fdm_image_style_image_height() {
 	});
 }
 
+function fdm_move_item_flags_and_special_modal() {
+
+	jQuery( '.fdm-details-div-inside .fdm-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-menu-item-flags' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-special' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-custom-fields' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-src-panel' ) );
+	});
+}
+
+function fdm_move_add_to_cart_modal() {
+
+	jQuery( '.fdm-details-div-inside' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-panel .fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-options-add-to-cart-button' ) );
+		jQuery( this ).find( '.fdm-item-panel .fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-add-to-cart-button' ) );
+	});
+}
+
 jQuery(document).ready(function($){
-	jQuery('.fdm-item .fdm-item-title').on('click', function() {
+	jQuery('.fdm-item .fdm-item-title, .fdm-item-image').on('click', function() {
 		let $this = jQuery(this).parents('.fdm-item').eq(0);
 		
 		// Load Lightbox
@@ -113,6 +133,12 @@ function loadLighbox(post_id, callback = undefined) {
 	var data = 'post_id=' + post_id + '&action=fdm_menu_item_details';
 	jQuery.post(ajaxurl, data, function(response) {
 		jQuery('.fdm-details-div-content').html(response);
+		fdm_move_item_flags_and_special_modal();
+		fdm_move_add_to_cart_modal();
 		callback && callback();
+
+		if ( typeof fdm_set_add_to_cart_actions == "function" ) { 
+			fdm_set_add_to_cart_actions();
+		}
 	});
 }

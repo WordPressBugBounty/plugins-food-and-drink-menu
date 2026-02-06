@@ -2,17 +2,27 @@ var cart_location = fdm_ordering_data.cart_location;
 
 jQuery(document).ready(function() {
 
+	fdm_move_stuff_in_cart();
+
+	jQuery( '.fdm-options-add-to-cart-button' ).attr( 'tabindex', '0' );
+	jQuery( '.fdm-add-to-cart-button' ).attr( 'tabindex', '0' );
+
 	jQuery( '.cart-location-bottom #fdm-ordering-contact-details, .cart-location-bottom #fdm-order-payment-toggle, .cart-location-bottom #fdm-order-submit, .cart-location-bottom #fdm-order-payment-form-div' ).addClass ( 'fdm-hidden' );
 
 	if ( jQuery( '#fdm-ordering-sidescreen-items > div' ).length ) {
 
 		if ( cart_location == 'bottom' ) {
+
 			jQuery( '.fdm-ordering-bottom-bar' ).removeClass( 'fdm-hidden' );
 		}
 		else {
+
 			jQuery( '.fdm-ordering-sidescreen' ).removeClass( 'fdm-hidden' );
 			jQuery( '.fdm-ordering-sidescreen' ).css( 'right', '0px' );
+
+			fdm_move_stuff_in_cart();
 		}
+
 		fdm_update_cart_total();
 	}
 
@@ -37,9 +47,12 @@ jQuery(document).ready(function() {
 	});
 
 	jQuery( '#fdm-ordering-sidescreen-tab' ).on( 'click', function() {
+
 		jQuery( '#fdm-ordering-sidescreen-tab' ).addClass( 'fdm-hidden' );
 		jQuery( '.fdm-ordering-sidescreen' ).removeClass( 'fdm-hidden' );
 		jQuery( '.fdm-ordering-sidescreen' ).animate( { 'right':'0px' }, {duration:750} );
+
+		fdm_move_stuff_in_cart();
 	});
 
 	jQuery( '.fdm-ordering-bottom-bar-toggle-inside' ).on( 'click', function() {
@@ -63,19 +76,7 @@ jQuery(document).ready(function() {
 		}
 	});
 
-	jQuery( '.fdm-add-to-cart-button' ).on( 'click', function() {
-
-		var post_id = jQuery( this ).data( 'postid' );
-
-		fdm_add_to_cart( post_id );
-	});
-
-	jQuery( '.fdm-options-add-to-cart-button' ).on( 'click', function() {
-
-		var post_id = jQuery( this ).data( 'postid' );
-
-		fdm_display_order_details_popup( post_id );
-	});
+	fdm_set_add_to_cart_actions();
 
 	jQuery( '#fdm-ordering-popup-submit button' ).on( 'click', function( event ) {
 		var post_id = jQuery( this ).data( 'post_id' );
@@ -121,6 +122,11 @@ jQuery(document).ready(function() {
 		jQuery.post( ajaxurl, data, function( response ) {});
 	});
 
+	jQuery( '.fdm-tip-amount' ).on( 'change', function() {
+
+		fdm_update_cart_total();
+	} );
+
 	jQuery( '#fdm-order-submit-button' ).on( 'click', function() {
 
 		// disable the submit button to prevent repeated clicks
@@ -132,6 +138,10 @@ jQuery(document).ready(function() {
 		var email = jQuery( 'input[name="fdm_ordering_email"]' ).val();
 		var phone = jQuery( 'input[name="fdm_ordering_phone"]' ).val();
 		var note = jQuery( 'textarea[name="fdm_ordering_note"]' ).val();
+		var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
+		var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+		var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
+		var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
 
 		var custom_fields = {};
 
@@ -160,6 +170,10 @@ jQuery(document).ready(function() {
 			email: email,
 			phone: phone,
 			note: note,
+			pickup_time: pickup_time,
+			delivery: delivery,
+			tip_amount: tip_amount,
+			discount_code: discount_code,
 			custom_fields: custom_fields,
 			nonce: fdm_ordering_popup_data.nonce,
 			action: 'fdm_submit_order'
@@ -222,6 +236,18 @@ jQuery(document).ready(function() {
 		event.stopPropagation();
 	} );
 
+	jQuery( '.fdm-delivery-toggle' ).on( 'click', function() {
+
+		if ( jQuery( this ).val() == 'delivery' ) {
+			jQuery( '.fdm-delivery-fee' ).removeClass( 'fdm-hidden' );
+		}
+		else {
+			jQuery( '.fdm-delivery-fee' ).addClass( 'fdm-hidden' );
+		}
+
+		fdm_update_cart_total();
+	});
+
 	jQuery( '.fdm-payment-type-toggle' ).on( 'click', function() {
 
 		if ( jQuery( this ).val() == 'pay-in-store' ) {
@@ -232,6 +258,38 @@ jQuery(document).ready(function() {
 			jQuery( '#fdm-order-submit' ).addClass( 'fdm-hidden' );
 			jQuery( '#fdm-order-payment-form-div' ).removeClass( 'fdm-hidden' );
 		}
+	});
+
+	jQuery( '.fdm-check-discount-code' ).on( 'click', function() {
+
+		var discount_code = jQuery( '.fdm-discount-code' ).val();
+		var order_value = jQuery( '.fdm-ordering-sidescreen-total-value' ).html();
+
+		var params = {
+			discount_code: discount_code,
+			order_value: order_value,
+			nonce: fdm_ordering_popup_data.nonce,
+			action: 'fdm_check_discount_code',
+		};
+
+		var data = jQuery.param( params );
+
+		jQuery.post( ajaxurl, data, function( response ) {
+			if ( ! response ) { return; }
+
+			jQuery( '.fdm-discount-code-response' ).remove();
+
+			if ( response.success ) { 
+
+				jQuery( '.fdm-discount-amount' ).val( response.data.discount_amount );
+				jQuery( '.fdm-discount-type' ).val( response.data.discount_type );
+				jQuery( '.fdm-discount-order-minimum' ).val( response.data.discount_minimum );
+			}
+ 
+			jQuery( '<span class="fdm-discount-code-response">' + response.data.msg + '</span>' ).insertBefore( '.fdm-check-discount-code' ); 
+
+			fdm_update_cart_total();
+		});
 	});
 
 	jQuery( '.fdm-ordering-bottom-bar-checkout-button' ).on( 'click', function() {
@@ -298,12 +356,35 @@ function fdm_display_order_details_popup( post_id ) {
 
 }
 
+function fdm_set_add_to_cart_actions() {
+
+	jQuery( '.fdm-add-to-cart-button' ).off( 'click' );
+	jQuery( '.fdm-add-to-cart-button' ).on( 'click', function() {
+
+		var post_id = jQuery( this ).data( 'postid' );
+
+		fdm_add_to_cart( post_id );
+		jQuery( '.fdm-details-div' ).addClass( 'fdm-hidden' );
+	});
+
+	jQuery( '.fdm-options-add-to-cart-button' ).off( 'click' );
+	jQuery( '.fdm-options-add-to-cart-button' ).on( 'click', function() {
+
+		var post_id = jQuery( this ).data( 'postid' );
+
+		fdm_display_order_details_popup( post_id );
+		jQuery( '.fdm-details-div' ).addClass( 'fdm-hidden' );
+	});
+}
+
 function fdm_add_to_cart( post_id ) {
 
 	if ( cart_location == 'bottom' ) {
+
 		jQuery( '.fdm-ordering-bottom-bar' ).removeClass( 'fdm-hidden' );
 	}
 	else {
+
 		jQuery( '.fdm-ordering-sidescreen' ).removeClass( 'fdm-hidden' );
 		jQuery( '#fdm-ordering-sidescreen-tab' ).addClass( 'fdm-hidden' );
 		jQuery( '.fdm-ordering-sidescreen' ).animate( {'right':'0px'}, {duration:750} );
@@ -349,6 +430,8 @@ function fdm_add_to_cart( post_id ) {
 		fdm_update_cart_total();
 
 		fdm_handle_delete_clicks();
+
+		fdm_move_stuff_in_cart();
 	});
 }
 
@@ -454,12 +537,42 @@ function fdm_update_cart_total() {
 		total_price += parseFloat( jQuery( this ).data( 'price' ) ) * qty;
 	});
 
+	let subtotal = total_price;
+
+	let discount_amount = 0;
+
+	let discount_number = jQuery( '.fdm-discount-amount' ).length ? parseFloat( jQuery( '.fdm-discount-amount' ).val() ) : 0;
+	let discount_type = jQuery( '.fdm-discount-type' ).length ? jQuery( '.fdm-discount-type' ).val() : 'percentage';
+	let discount_minimum = jQuery( '.fdm-discount-order-minimum' ).length ? parseFloat( jQuery( '.fdm-discount-order-minimum' ).val() ) : 0;
+
+	discount_minimum = ! isNaN( discount_minimum ) ? discount_minimum : 0;
+
+	if ( discount_number && discount_minimum < total_price ) {
+
+		total_price = discount_type == 'amount' ? Math.max( 0, total_price - discount_number ) : total_price * ( 1 - ( Math.min( 100, Math.max( 0, discount_number ) ) / 100 )  );
+
+		discount_amount = subtotal - total_price;
+
+		jQuery( '#fdm-ordering-sidescreen-discount' ).removeClass( 'fdm-hidden' );
+	}
+
 	let tax_amount = ( fdm_ordering_data.tax_rate.replace(/[^\d.-]/g,'') / 100 ) * total_price;
-	
+
+	total_price += tax_amount;
+
+	let tip_amount = jQuery( '.fdm-tip-amount' ).length ? parseFloat( jQuery( '.fdm-tip-amount' ).val() ) : 0;
+	tip_amount = ! isNaN( tip_amount ) ? tip_amount : 0;
+
+	total_price += tip_amount;
+
+	let delivery_amount = jQuery( '.fdm-delivery-fee' ).not( '.fdm-hidden' ).length ? parseFloat( jQuery( '.fdm-delivery-fee' ).data( 'delivery_fee' ) ) : 0;
+	delivery_amount = ! isNaN( delivery_amount ) ? delivery_amount : 0;
+
+	total_price += delivery_amount;
+
+	jQuery( '#fdm-ordering-sidescreen-subtotal-value' ).html( ( Math.round( subtotal * 100 ) / 100 ).toFixed( 2 ) );
+	jQuery( '#fdm-ordering-sidescreen-discount-value' ).html( ( Math.round( discount_amount * 100 ) / 100 ).toFixed( 2 ) );
 	jQuery( '#fdm-ordering-sidescreen-tax-amount-value' ).html( ( Math.round( tax_amount * 100 ) / 100 ).toFixed( 2 ) );
-
-	total_price = total_price + tax_amount;
-
 	jQuery( '#fdm-ordering-sidescreen-total-value' ).html( ( Math.round( total_price * 100 ) / 100 ).toFixed( 2 ) );
 	jQuery( '#fdm-ordering-bottom-bar-total' ).html( ( Math.round( total_price * 100 ) / 100 ).toFixed( 2 ) );
 	jQuery( '#fdm-ordering-sidescreen-paypal-total' ).val( ( Math.round( total_price * 100 ) / 100 ).toFixed( 2 ) );
@@ -543,6 +656,16 @@ function fdm_validate_ordering_fields() {
 		valid = false;
 	}
 
+	// make sure the delivery minimum is met
+	let delivery =  ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+
+	if ( delivery && fdm_ordering_data.delivery_minimum && parseFloat( jQuery( '#fdm-ordering-sidescreen-total-value' ).html() ) < fdm_ordering_data.delivery_minimum ) {
+
+		jQuery( '#fdm-order-submit-button, #stripe-submit' ).before( '<p class="fdm-message">There is a minimum of ' + fdm_ordering_data.price_prefix + fdm_ordering_data.delivery_minimum + fdm_ordering_data.price_suffix + ' for delivery.</p>' ).parent().find( '.fdm-message' ).delay( 6000 ).fadeOut();
+
+		valid = false;
+	}
+
 	return valid;
 }
 
@@ -570,3 +693,47 @@ function fdm_return_random_string( length = 4 ) {
    return result;
 }
 
+function fdm_move_stuff_in_cart() {
+
+	jQuery( '.cart-location-side.fdm-style-classic .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+	});
+
+	jQuery( '.cart-location-side.fdm-style-image .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+	});
+
+	jQuery( '.cart-location-bottom.fdm-style-classic .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+	});
+
+	jQuery( '.cart-location-bottom.fdm-style-image .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+	});
+	
+	jQuery( '.cart-location-side.fdm-style-refined .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-title' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-order-item-options' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-quantity-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-item-price-wrapper' ) );
+	});
+
+	jQuery( '.cart-location-side.fdm-style-ordering .fdm-cart-menu-item' ).each( function() {
+
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-title' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-order-item-options' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-delete-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-quantity-wrapper' ) );
+		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-cart-item-price-wrapper' ) );
+	});
+
+	jQuery( '.cart-location-bottom #fdm-order-payment-toggle' ).before( '<div class="fdm-flex-break"></div>' );
+}

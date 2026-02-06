@@ -274,7 +274,7 @@ class fdmViewMenu extends fdmView {
 		$menu_schema = array(
 			'@context' 			=> 'https://schema.org',
 			'@type' 			=> 'Menu',
-			'name'				=> $this->title,
+			'name'				=> $this->post->post_title,
 			'hasMenuSection' 	=> array()
 		);
 
@@ -287,26 +287,34 @@ class fdmViewMenu extends fdmView {
 				$menu_section_schema = array(
 					'@type'			=> 'MenuSection',
 					'name'			=> $section->title,
-					'description'	=> $section->description,
-					'image'			=> ! empty( $section->image_url ) ? $section->image_url : '',
+					'description'	=> $this->clean_schema_description( $section->description ),
 					'hasMenuItem'	=> array(),
 				);
+
+				if ( ! empty( $section->image_url ) ) {
+
+					$menu_section_schema['image'] = $section->image_url;
+				}
 	
 				foreach ( $section->items as $item ) {
 	
 					$menu_item_schema = array(
 			    		'@type' 			=> 'MenuItem',
 			    		'name' 				=> $item->title,
-			    		'image'				=> ! empty( $item->image ) ? $item->image : '',
-			    		'description'		=> $item->content,
+			    		'description'		=> $this->clean_schema_description( $item->content ),
 			    		'offers' 			=> array()
 			    	);
+
+			    	if ( ! empty( $item->image ) ) {
+
+			    		$menu_item_schema['image'] = $item->image;
+			    	}
 	
 			    	foreach ( $item->prices as $price ) {
 	
 			    		$menu_item_schema['offers'][] = array(
-			    			'@type' 			=> 'offer',
-			    			'price' 			=> $price,
+			    			'@type' 			=> 'Offer',
+			    			'price' 			=> preg_replace('/[^0-9.,]/', '', $price),
 			    			'priceCurrency'		=> $fdm_controller->settings->get_setting( 'ordering-currency' )
 			    		);
 			    	}
@@ -319,6 +327,36 @@ class fdmViewMenu extends fdmView {
 		}
 
 		$fdm_controller->schema_menu_data[] = $menu_schema;
+	}
+
+	private function clean_schema_description( $content ) {
+
+	    if ( empty( $content ) ) {
+	        return '';
+	    }
+	
+	    // 1. Remove HTML & WP comments
+	    $content = preg_replace( '/<!--.*?-->/s', '', $content );
+	
+	    // 2. Remove <script> and <style> blocks entirely
+	    $content = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $content );
+	    $content = preg_replace( '/<style\b[^>]*>(.*?)<\/style>/is', '', $content );
+	
+	    // 3. Remove shortcodes (optional — enable if needed)
+	    if ( function_exists( 'strip_shortcodes' ) ) {
+	        $content = strip_shortcodes( $content );
+	    }
+	
+	    // 4. Remove remaining HTML tags
+	    $content = strip_tags( $content );
+	
+	    // 5. Decode HTML entities (e.g. &amp; → &, &nbsp; → space)
+	    $content = html_entity_decode( $content, ENT_QUOTES, 'UTF-8' );
+	
+	    // 6. Normalize whitespace
+	    $content = preg_replace( '/\s+/', ' ', trim( $content ) );
+	
+	    return $content;
 	}
 
 	/**

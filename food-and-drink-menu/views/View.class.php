@@ -337,13 +337,21 @@ class fdmView extends fdmBase {
 			'label-item-s-in-cart'					=> __( 'Item(s) in Your Cart', 'food-and-drink-menu' ),
 			'label-quantity'						=> __( 'Quantity', 'food-and-drink-menu' ),
 			'label-clear'							=> __( 'Clear', 'food-and-drink-menu' ),
+			'label-sub-total'						=> __( 'Sub-Total', 'food-and-drink-menu' ),
+			'label-discount-amount'					=> __( 'Discount', 'food-and-drink-menu' ),
 			'label-tax'								=> __( 'Tax', 'food-and-drink-menu' ),
 			'label-total'							=> __( 'Total', 'food-and-drink-menu' ),
 			'label-check-out'						=> __( 'Check Out', 'food-and-drink-menu' ),
+			'label-discount-code'					=> __( 'Discount Code', 'food-and-drink-menu' ),
+			'label-apply-discount'					=> __( 'Apply', 'food-and-drink-menu' ),
+			'label-pickup-time'						=> __( 'Order Time', 'food-and-drink-menu' ),
 			'label-name'							=> __( 'Name', 'food-and-drink-menu' ),
 			'label-email'							=> __( 'Email', 'food-and-drink-menu' ),
 			'label-phone'							=> __( 'Phone', 'food-and-drink-menu' ),
 			'label-order-note'						=> __( 'Order Note', 'food-and-drink-menu' ),
+			'label-pickup'							=> __( 'Pickup', 'food-and-drink-menu' ),
+			'label-delivery'						=> __( 'Delivery', 'food-and-drink-menu' ),
+			'label-delivery-minimum'				=> __( 'Delivery Minimum', 'food-and-drink-menu' ),
 			'label-pay-in-store'					=> __( 'Pay in Store', 'food-and-drink-menu' ),
 			'label-pay-online'						=> __( 'Pay Online', 'food-and-drink-menu' ),
 			'label-submit-order'					=> __( 'Submit Order', 'food-and-drink-menu' ),
@@ -353,6 +361,8 @@ class fdmView extends fdmBase {
 			'label-card-number'						=> __( 'Card Number', 'food-and-drink-menu' ),
 			'label-cvc'								=> __( 'CVC', 'food-and-drink-menu' ),
 			'label-expiration'						=> __( 'Expiration (MM/YYYY)', 'food-and-drink-menu' ),
+			'label-tip'								=> __( 'Tip', 'food-and-drink-menu' ),
+			'label-delivery-fee'					=> __( 'Delivery Fee', 'food-and-drink-menu' ),
 			'label-pay-now'							=> __( 'Pay Now', 'food-and-drink-menu' ),
 		);
 	}
@@ -401,7 +411,7 @@ class fdmView extends fdmBase {
 			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') != '' ) { echo '.fdm-section-header:after { border-bottom-color: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-display-section-descriptions') != '1' ) { echo '.fdm-section-header p { display: none; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') != '' ) { echo '.fdm-icon { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-details-lightbox') != 'disabled' && $fdm_controller->settings->get_setting('fdm-details-lightbox') != '' ) { echo '.fdm-item-title { cursor: pointer; }'; }
+			if ( $fdm_controller->settings->get_setting('fdm-details-lightbox') != 'disabled' && $fdm_controller->settings->get_setting('fdm-details-lightbox') != '' ) { echo '.fdm-item-title, .fdm-item-image { cursor: pointer; }'; }
 		echo  '</style>';
 	}
 

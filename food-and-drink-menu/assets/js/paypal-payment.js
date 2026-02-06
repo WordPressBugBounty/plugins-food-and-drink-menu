@@ -1,24 +1,7 @@
 jQuery(document).ready(function($) {
 	$("#paypal-payment-form").submit(function(event) {
 
-		// check for blank required fields
-		if ( 
-				(jQuery( 'input[name="fdm_ordering_name"]' ).is( '[required]') && jQuery( 'input[name="fdm_ordering_name"]' ).val() == '') || 
-				(jQuery( 'input[name="fdm_ordering_email"]' ).is( '[required]') && jQuery( 'input[name="fdm_ordering_email"]' ).val() == '') || 
-				(jQuery( 'input[name="fdm_ordering_phone"]' ).is( '[required]') && jQuery( 'input[name="fdm_ordering_phone"]' ).val() == '') 
-			) {
-
-			jQuery( '<p class="fdm-message">Please make sure all required fields have been filled in before submitting</p>' ).insertBefore( this ).delay( 6000 ).queue( function() { jQuery( '.fdm-message').remove(); } );
-
-			return false;
-		}
-
-		if ( fdm_ordering_data.minimum_order && parseFloat( jQuery( '#fdm-ordering-sidescreen-total-value' ).html() ) < fdm_ordering_data.minimum_order ) {
-
-			jQuery( '<p class="fdm-message">There is a minimum of ' + fdm_ordering_data.price_prefix + fdm_ordering_data.minimum_order + fdm_ordering_data.price_suffix + ' to place an order.</p>' ).insertBefore( this ).delay( 6000 ).queue( function() { jQuery( '.fdm-message').remove(); } );
-
-			return false;
-		}
+		if ( ! fdm_validate_ordering_fields() ) { return false; }
 
 		// disable the submit button to prevent repeated clicks
 		$('#paypal-submit').attr("disabled", "disabled");
@@ -31,6 +14,10 @@ jQuery(document).ready(function($) {
 		var email = jQuery( 'input[name="fdm_ordering_email"]' ).val();
 		var phone = jQuery( 'input[name="fdm_ordering_phone"]' ).val();
 		var note = jQuery( 'textarea[name="fdm_ordering_note"]' ).val();
+		var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
+		var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
+		var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
+		var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
 
 		var custom_fields = {};
 		jQuery( '.fdm-ordering-custom-fields' ).find( 'input, textarea, select' ).each( function() {
@@ -48,6 +35,10 @@ jQuery(document).ready(function($) {
 			email: email,
 			phone: phone,
 			note: note,
+			pickup_time: pickup_time,
+			delivery: delivery,
+			tip_amount: tip_amount,
+			discount_code: discount_code,
 			custom_fields: custom_fields,
 			post_status: 'draft',
 			nonce: fdm_paypal_payment.nonce,

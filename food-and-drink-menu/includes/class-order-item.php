@@ -39,6 +39,12 @@ class fdmOrderItem {
 	// The status of this order
 	public $post_status;
 
+	// When the customer has requested the order be ready for.
+	public $pickup_time;
+
+	// Whether this is a delivery order
+	public $delivery;
+
 	// The URL that the order was received from
 	public $permalink;
 
@@ -48,14 +54,35 @@ class fdmOrderItem {
 	// The receipt id of the online order
 	public $receipt_id;
 
+	// The discount code used for this order
+	public $discount_code;
+
 	// The amount paid online for this order
 	public $payment_amount;
+
+	// The order amount before discounts, tax, tip and delivery
+	public $subtotal;
+
+	// The amount removed from the order by a discount code
+	public $discount_amount;
+
+	// The amount paid for the order to be delivered
+	public $delivery_amount;
+
+	// The amount added to the order by the customer as a tip
+	public $tip_amount;
+
+	// The amount added to the order as tax
+	public $tax_amount;
 
 	// The time the order is expected to be ready for pickup
 	public $estimated_time;
 
 	// The custom fields associated with this order
 	public $custom_fields = array();
+
+	// Stores any errors found during the validation process
+	public $validation_errors = array();
 
 	public function __construct( $args = array() ) {
 		
@@ -100,8 +127,15 @@ class fdmOrderItem {
 			'email' => '',
 			'phone' => '',
 			'note' => '',
+			'pickup_time' => __( 'Immediately', 'food-and-drink-menu' ),
+			'delivery' => false,
 			'receipt_id' => '',
+			'discount_code' => '',
 			'payment_amount' => 0,
+			'subtotal' => 0,
+			'tax_amount' => 0,
+			'delivery_amount' => 0,
+			'tip_amount' => 0,
 			'estimated_time' => '24:00',
 			'permalink' => get_site_url(),
 			'custom_fields' => array()
@@ -119,9 +153,18 @@ class fdmOrderItem {
 		$this->email = $meta['email'];
 		$this->phone = $meta['phone'];
 		$this->note = $meta['note'];
+		$this->pickup_time = $meta['pickup_time'];
 		$this->permalink = $meta['permalink'];
+		$this->delivery = $meta['delivery'];
 		$this->receipt_id = $meta['receipt_id'];
+		$this->discount_code = $meta['discount_code'];
 		$this->payment_amount = $meta['payment_amount'];
+		$this->order_total = $meta['order_total'];
+		$this->subtotal = $meta['subtotal'];
+		$this->tax_amount = $meta['tax_amount'];
+		$this->delivery_amount = $meta['delivery_amount'];
+		$this->tip_amount = $meta['tip_amount'];
+		$this->discount_amount = $meta['discount_amount'];
 		$this->estimated_time = $meta['estimated_time'];
 		$this->custom_fields = $meta['custom_fields'];
 	}
@@ -187,15 +230,24 @@ class fdmOrderItem {
 	public function save_order_post_meta() {
 
 		$postmeta = array(
-			'name'           => $this->name,
-			'email'          => $this->email,
-			'phone'          => $this->phone,
-			'note'           => $this->note,
-			'receipt_id'     => $this->receipt_id,
-			'permalink'      => $this->permalink,
-			'payment_amount' => $this->payment_amount,
-			'estimated_time' => $this->estimated_time,
-			'custom_fields'	 => $this->custom_fields
+			'name'            => $this->name,
+			'email'           => $this->email,
+			'phone'           => $this->phone,
+			'note'            => $this->note,
+			'pickup_time'     => $this->pickup_time,
+			'delivery'        => $this->delivery,
+			'receipt_id'      => $this->receipt_id,
+			'discount_code'   => $this->discount_code,
+			'permalink'       => $this->permalink,
+			'payment_amount'  => $this->payment_amount,
+			'order_total'     => $this->order_total,
+			'delivery_amount' => $this->delivery_amount,
+			'subtotal' 	      => $this->subtotal,
+			'tax_amount'      => $this->tax_amount,
+			'tip_amount'      => $this->tip_amount,
+			'discount_amount' => $this->discount_amount,
+			'estimated_time'  => $this->estimated_time,
+			'custom_fields'	  => $this->custom_fields
 		);
 
 		$postmeta = apply_filters( 'fdm_insert_order_metadata', $postmeta, $this );
@@ -225,6 +277,8 @@ class fdmOrderItem {
 		if ( $this->is_valid_submission() === false ) {
 			return false;
 		}
+
+		$this->update_admin_order_total();
 		
 		$this->save_order_post(); 
 
@@ -255,7 +309,9 @@ class fdmOrderItem {
 
 		$this->estimated_time = empty( $_POST['fdm_order_eta'] ) ? '' : sanitize_text_field( $_POST['fdm_order_eta'] );
 
-		$this->payment_amount = empty( $_POST['fdm_payment_amount'] ) ? '' : sanitize_text_field( $_POST['fdm_payment_amount'] );
+		$this->payment_amount = empty( $_POST['fdm_payment_amount'] ) ? 0 : sanitize_text_field( $_POST['fdm_payment_amount'] );
+		$this->discount_amount = empty( $_POST['fdm_discount_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_discount_amount'] ) );
+		$this->tip_amount = empty( $_POST['fdm_tip_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_tip_amount'] ) );
 		
 		$custom_fields = $fdm_controller->settings->get_ordering_custom_fields();
 
@@ -281,6 +337,15 @@ class fdmOrderItem {
 	}
 
 	/**
+	 * Update the order total, in case an admin updates the tip or discount amounts
+	 * @since 2.5.0
+	 */
+	public function update_admin_order_total() { 
+		
+		$this->order_total = $this->subtotal + $this->tax_amount + $this->tip_amount + $this->delivery_amount - $this->discount_amount;
+	}
+
+	/**
 	 * Deletes an item from an order
 	 * @since 2.4.1
 	 */
@@ -301,28 +366,101 @@ class fdmOrderItem {
 	}
 
 	/**
+	 * Set the different payment portions of the order total
+	 * @since 2.5.0
+	 */
+	public function set_payment_amounts() {
+
+		$this->get_order_total_tax_in();
+	}
+
+	/**
 	 * Returns the order total, with tax included
 	 * @since 2.4.1
 	 */
 	public function get_order_total_tax_in() {
 
-		if ( ! isset( $this->order_total ) ) { $this->calculate_order_total(); }
+		if ( ! isset( $this->order_total ) ) { 
 
-		return fdm_add_tax_to_price( $this->order_total );
+			$this->calculate_order_subtotal();
+
+			$this->maybe_apply_discount_code();
+
+			$this->maybe_add_delivery_fee();
+
+			$this->calculate_tax_amount();
+		}
+
+		$this->order_total = $this->subtotal - $this->discount_amount + $this->delivery_amount + $this->tax_amount + floatval( $this->tip_amount );
+
+		return $this->order_total; 
 	}
 
 	/**
-	 * Calculate the order total, based on the items in the order
+	 * Calculate the order subtotal, based on the items in the order
 	 * @since 2.4.1
 	 */
-	public function calculate_order_total() {
+	public function calculate_order_subtotal() {
+		global $fdm_controller;
 
-		$this->order_total = 0;
+		$this->subtotal = 0;
 
 		foreach ( $this->get_order_items() as $order_item ) {
 			
-			$this->order_total += fdm_calculate_admin_price( $order_item );
+			$this->subtotal += fdm_calculate_admin_price( $order_item );
 		}
+	}
+
+	/**
+	 * Apply a discount to the order total, if applicable
+	 * @since 2.5.0
+	 */
+	public function maybe_apply_discount_code() {
+		global $fdm_controller;
+		
+		if ( empty( $this->discount_code ) ) { return; }
+
+		$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
+
+		foreach( $discounts as $discount ) {
+
+			if ( $discount->code != $this->discount_code ) { continue; }
+
+			if ( ! $discount->enabled ) { continue; }
+
+			if ( ! $discount->minimum < $this->subtotal )  { continue; }
+
+			if ( ( ! empty( $discount->start_datetime ) and strtotime( $discount->start_datetime ) > time() ) or ( ! empty( $discount->end_datetime ) and strtotime( $discount->end_datetime ) < time() ) ) { continue; }
+
+			$this->discount_amount = $discount->type == 'amount' ? max( $discount->amount, 0 ) : $this->subtotal * max( min( $discount->amount, 100 ), 0 ) / 100;
+		}
+	}
+
+	/**
+	 * Add the delivery amount, if necessary
+	 * @since 2.5.0
+	 */
+	public function maybe_add_delivery_fee() {
+		global $fdm_controller;
+
+		if ( $this->delivery and ! empty( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ) {
+
+			$this->delivery_amount = floatval( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) );
+		}
+	}
+
+	/**
+	 * Calculate any tax on the order
+	 * @since 2.5.0
+	 */
+	public function calculate_tax_amount() {
+		global $fdm_controller;
+		
+		$tax_rate = floatval( preg_replace( '/[^0-9.-]/', '', $fdm_controller->settings->get_setting( 'ordering-tax-rate' ) ) ) / 100;
+
+		$taxable_amount = $this->subtotal - $this->discount_amount + $this->delivery_amount;
+
+		$this->tax_amount = apply_filters( 'fdm_taxable_amount', $taxable_amount, $this->subtotal, $this->discount_amount, $this->delivery_amount, $this->tip_amount ) * $tax_rate;
 	}
 
 	/**

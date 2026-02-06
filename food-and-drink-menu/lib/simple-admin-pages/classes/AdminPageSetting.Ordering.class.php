@@ -18,7 +18,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingOrdering_2_6_19 extends sapAdminPageSetting_2_6_19 {
+class sapAdminPageSettingOrdering_2_7_3 extends sapAdminPageSetting_2_7_3 {
 
 	public $items;
 
@@ -84,7 +84,7 @@ class sapAdminPageSettingOrdering_2_6_19 extends sapAdminPageSetting_2_6_19 {
 				</table>
 
 				<div class='sap-ordering-table-restore-default button button-primary'>
-					<?php _e( 'Restore Default Order', 'simple-admin-pages' ); ?>
+					<?php esc_html_e( 'Restore Default Order', 'simple-admin-pages' ); ?>
 				</div>
 			</div>
 

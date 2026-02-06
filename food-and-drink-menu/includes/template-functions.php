@@ -296,6 +296,21 @@ function fdm_get_order_statuses() {
 	return apply_filters( 'fdm_order_statuses', $order_statuses );
 }
 
+function fdm_time_to_decimal( $time = false ) {
+
+	if ( empty( $time ) ) {
+
+	 	$timezone = wp_timezone(); 
+		$gmt_seconds_offset = $timezone->getOffset( new DateTime );
+
+		$time = time() + $gmt_seconds_offset; 
+	}
+
+	$rounded_minutes = ceil( date( 'i', $time ) / 15 ) * 15;
+
+	return ( $rounded_minutes == 60 ) ? intval( date( 'H', $time + strtotime( '+1 hour' ) ) ) : intval( date( 'H', $time ) ) + $rounded_minutes / 60;
+}
+
 if ( ! function_exists( 'fdm_decode_infinite_table_setting' ) ) {
 function fdm_decode_infinite_table_setting( $values ) {
 

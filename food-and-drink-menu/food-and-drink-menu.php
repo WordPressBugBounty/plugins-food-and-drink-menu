@@ -3,7 +3,7 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.4.21
+ * Version: 2.5.0
  * Requires at least: 6.0
  * Author: Five Star Plugins
  * Author URI: https://www.fivestarplugins.com/
@@ -43,7 +43,7 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.4.21' );
+		define( 'FDM_VERSION', '2.5.0' );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -502,7 +502,7 @@ class fdmFoodAndDrinkMenu {
 		?>
 		<div class="fdm-admin-header-menu">
 			<h2 class="nav-tab-wrapper">
-			<a id="fdm-dash-mobile-menu-open" href="#" class="menu-tab nav-tab"><?php _e("MENU", 'food-and-drink-menu'); ?><span id="fdm-dash-mobile-menu-down-caret">&nbsp;&nbsp;&#9660;</span><span id="fdm-dash-mobile-menu-up-caret">&nbsp;&nbsp;&#9650;</span></a>
+			<a id="fdm-dash-mobile-menu-open" href="#" class="menu-tab nav-tab fdm-hidden"><span class="dashicons dashicons-menu"></span><?php _e("Menu", 'order-tracking'); ?></a>
 			<a id="dashboard-menu" href='edit.php?post_type=fdm-menu&page=fdm-dashboard' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu_page_fdm-dashboard') {echo 'nav-tab-active';}?>"><?php _e("Dashboard", 'food-and-drink-menu'); ?></a>
 			<?php if ($fdm_controller->settings->get_setting( 'fdm-enable-ordering' ) ) { ?><a id="orders-menu" href='edit.php?post_type=fdm-menu&page=fdm-orders' class="menu-tab nav-tab <?php if (isset($_GET['page']) and $_GET['page'] == 'fdm-orders') {echo 'nav-tab-active';}?>"><?php _e("Orders", 'food-and-drink-menu'); ?></a><?php } ?>
 			<a id="menus-menu" href='edit.php?post_type=fdm-menu' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu' || $screenID == 'edit-fdm-menu') {echo 'nav-tab-active';}?>"><?php _e("Menus", 'food-and-drink-menu'); ?></a>
@@ -568,12 +568,13 @@ class fdmFoodAndDrinkMenu {
 		$price_suffix = ( $fdm_controller->settings->get_setting( 'fdm-currency-symbol-location' ) == 'after' ? $fdm_controller->settings->get_setting( 'fdm-currency-symbol' ) : '' );
 		
 		$fdm_ordering_data = array(
-			'singular_text' => 'N/A',
-			'plural_text' 	=> 'N/A',
-			'price_prefix' 	=> $price_prefix,
-			'price_suffix'	=> $price_suffix,
-			'minimum_order' => 0,
-			'tax_rate' 		=> $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
+			'singular_text'    => 'N/A',
+			'plural_text' 	   => 'N/A',
+			'price_prefix' 	   => $price_prefix,
+			'price_suffix'	   => $price_suffix,
+			'minimum_order'    => 0,
+			'delivery_minimum' => 0,
+			'tax_rate' 		   => $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
 		);
 		wp_localize_script( 'fdm-admin-ordering', 'fdm_ordering_data', $fdm_ordering_data );
 	}

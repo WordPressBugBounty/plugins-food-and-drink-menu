@@ -132,9 +132,6 @@
 .fdm-item-panel {
 	margin-top: 48px;
 }
-.fdm-item:nth-child(n+3) .fdm-item-panel {
-	margin-top: calc(48px - .5em);
-}
 .fdm-item-image {
 	display: none;
 }
@@ -206,7 +203,8 @@ EXTRA
 	order: 4;
 	width: 100%;
 }
-.fdm-options-add-to-cart-button {
+.fdm-options-add-to-cart-button,
+.fdm-add-to-cart-button {
 	order: 5
 }
 .fdm-menu-item-flags {

@@ -40,7 +40,7 @@
 	
 	<h3 id='fdm-ordering-sidescreen-header'>
 		<div id='fdm-ordering-sidescreen-close'>
-			<span class='<?php echo ( $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ) == 'side' ? 'dashicons dashicons-arrow-right-alt' : 'dashicons dashicons-dismiss' ); ?>'></span>
+			<span class='<?php echo ( $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ) == 'side' ? 'dashicons dashicons-no-alt' : 'dashicons dashicons-dismiss' ); ?>'></span>
 		</div>
 		<?php echo esc_html( $this->get_label( 'label-order-summary' ) ); ?>
 	</h3>
@@ -76,6 +76,32 @@
 			</div>
 		</div>
 
+		<div id='fdm-ordering-sidescreen-subtotal'>
+			<div id='fdm-ordering-sidescreen-subtotal-label'>
+				<?php echo esc_html( $this->get_label( 'label-sub-total' ) ); ?>
+			</div>
+			<div id='fdm-ordering-sidescreen-subtotal-value-container'>
+				<?php
+					echo $fdm_controller->settings->get_setting( 'fdm-currency-symbol-location' ) == 'before' ? esc_html( $fdm_controller->settings->get_setting( 'fdm-currency-symbol' ) ) : '';
+					echo '<span id="fdm-ordering-sidescreen-subtotal-value">0</span>';
+					echo $fdm_controller->settings->get_setting( 'fdm-currency-symbol-location' ) == 'after' ? esc_html( $fdm_controller->settings->get_setting( 'fdm-currency-symbol' ) ) : '' ;
+				?>
+			</div>
+		</div>
+
+		<div id='fdm-ordering-sidescreen-discount' class='fdm-hidden'>
+			<div id='fdm-ordering-sidescreen-discount-label'>
+				<?php echo esc_html( $this->get_label( 'label-discount-amount' ) ); ?>
+			</div>
+			<div id='fdm-ordering-sidescreen-discount-value-container'>
+				<?php
+					echo $fdm_controller->settings->get_setting( 'fdm-currency-symbol-location' ) == 'before' ? esc_html( $fdm_controller->settings->get_setting( 'fdm-currency-symbol' ) ) : '';
+					echo '<span id="fdm-ordering-sidescreen-discount-value">0</span>';
+					echo $fdm_controller->settings->get_setting( 'fdm-currency-symbol-location' ) == 'after' ? esc_html( $fdm_controller->settings->get_setting( 'fdm-currency-symbol' ) ) : '' ;
+				?>
+			</div>
+		</div>
+
 		<div id='fdm-ordering-sidescreen-tax'<?php echo $this->maybe_add_hidden_to_tax_row_item(); ?>>
 			<div id='fdm-ordering-sidescreen-tax-label'>
 				<?php echo esc_html( $this->get_label( 'label-tax' ) ); ?>
@@ -88,6 +114,22 @@
 				?>
 			</div>
 		</div>
+
+		<?php if ( $fdm_controller->settings->get_setting( 'fdm-enable-tipping' ) ) { ?>
+
+			<div id='fdm-ordering-sidescreen-tip'>
+        		<label><?php echo esc_html( $this->get_label( 'label-tip' ) ); ?></label>
+        		<input type='text' class='fdm-tip-amount' name='tip_amount'/>
+        	</div>
+        <?php } ?>
+
+        <?php if ( $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) and $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) { ?>
+
+        	<div class='form-row fdm-delivery-fee fdm-hidden' data-delivery_fee='<?php echo esc_attr( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ); ?>'>
+        		<label><?php echo esc_html( $this->get_label( 'label-delivery-fee' ) ); ?></label>
+        		<span><?php echo esc_html( fdm_format_price( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ); ?></span>
+        	</div>
+        <?php } ?>
 
 		<div id='fdm-ordering-sidescreen-total'>
 			<div id='fdm-ordering-sidescreen-total-label'>
@@ -102,6 +144,22 @@
 			</div>
 		</div>
 
+		<?php if ( $this->discounts_exist() ) { ?>
+
+			<div id='fdm-ordering-sidescreen-discount-entry'>
+        		<label><?php echo esc_html( $this->get_label( 'label-discount-code' ) ); ?></label>
+
+        		<input type='text' class='fdm-discount-code' name='discount_code'/>
+        		<input type='hidden' class='fdm-discount-amount' name='discount_amount' value='0'/>
+        		<input type='hidden' class='fdm-discount-type' name='discount_type' value='percentage'/>
+        		<input type='hidden' class='fdm-discount-order-minimum' name='discount_order_minimum' value='0'/>
+
+        		<div class='fdm-check-discount-code'>
+        			<?php echo esc_html( $this->get_label( 'label-apply-discount' ) ); ?>
+        		</div>
+        	</div>
+        <?php } ?>
+
 	</div> <!-- fdm-ordering-sidescreen-totals -->
 	
 	<?php $required_fields = is_array( $fdm_controller->settings->get_setting( 'fdm-ordering-required-fields' ) ) ? $fdm_controller->settings->get_setting( 'fdm-ordering-required-fields' ) : array(); ?>
@@ -111,6 +169,24 @@
 		<h3 id='fdm-ordering-sidescreen-contact-header'>
 			<?php echo esc_html( $this->get_label( 'label-check-out' ) ); ?>
 		</h3>
+
+		<?php if ( $fdm_controller->settings->get_setting( 'fdm-enable-pickup-time' ) ) { ?>
+
+        	<div class='fdm-ordering-contact-item' id="fdm-ordering-pickup-time">
+        		<label><?php echo esc_html( $this->get_label( 'label-pickup-time' ) ); ?></label>
+
+        		<select name='fdm_pickup_time'>
+
+        			<?php foreach( $this->get_pickup_time_options() as $time ) { ?>
+        				<option value='<?php echo esc_attr( $time ); ?>'>
+        					<?php echo esc_html( $time ); ?>
+        				</option>
+        			<?php } ?>
+
+        		</select>
+        	</div>
+        <?php } ?>
+
 		<div class='fdm-ordering-contact-item'>
 			<div class='fdm-ordering-contact-label <?php echo in_array( 'name', $required_fields )  ? 'fdm-ordering-required' : ''; ?>'><?php echo esc_html( $this->get_label( 'label-name' ) ); ?>:</div>
 			<div class='fdm-ordering-contact-field'><input type='text' name='fdm_ordering_name' <?php echo in_array( 'name', $required_fields )  ? 'required' : ''; ?> /></div>
@@ -183,6 +259,24 @@
 		</div>
 
 	</div>
+
+	<?php if ( $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) ) { ?>
+		<div id='fdm-order-delivery-toggle'>
+			<div class='fdm-order-delivery-toggle-option'>
+				<input type='radio' name='fdm-delivery-toggle' class='fdm-delivery-toggle' value='pickup' checked /><?php echo esc_html( $this->get_label( 'label-pickup' ) ); ?>
+			</div>
+			<div class='fdm-order-delivery-toggle-option'>
+				<input type='radio' name='fdm-delivery-toggle' class='fdm-delivery-toggle' value='delivery' /><?php echo esc_html( $this->get_label( 'label-delivery' ) ); ?>
+			</div>
+			<?php if ( $fdm_controller->settings->get_setting( 'ordering-delivery-minimum' ) ) { ?>
+
+				<div class='fdm-order-delivery-minimum'>
+					<label><?php echo esc_html( $this->get_label( 'label-delivery-minimum' ) ); ?></label>:
+					<span><?php echo esc_html( fdm_format_price( $fdm_controller->settings->get_setting( 'ordering-delivery-minimum' ) ) ); ?></span>
+				</div>
+			<?php } ?> 
+		</div>
+	<?php } ?>
 
 	<?php if ( $fdm_controller->settings->get_setting( 'enable-payment' ) and $fdm_controller->settings->get_setting( 'payment-optional' ) ) { ?>
 		<div id='fdm-order-payment-toggle'>

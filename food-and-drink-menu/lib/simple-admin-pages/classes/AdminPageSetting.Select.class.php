@@ -21,7 +21,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingSelect_2_6_19 extends sapAdminPageSetting_2_6_19 {
+class sapAdminPageSettingSelect_2_7_3 extends sapAdminPageSetting_2_7_3 {
 
 	public $sanitize_callback = 'sanitize_text_field';
 
@@ -47,9 +47,7 @@ class sapAdminPageSettingSelect_2_6_19 extends sapAdminPageSetting_2_6_19 {
 					<option></option>
 				<?php endif; ?>
 
-				<?php foreach ( $this->options as $id => $title  ) : ?>
-					<option value="<?php echo esc_attr( $id ); ?>"<?php if( $this->value == $id ) : ?> selected="selected"<?php endif; ?>><?php echo esc_html( $title ); ?></option>
-				<?php endforeach; ?>
+				<?php $this->print_options( $this->options ); ?>
 
 			</select>
 			<?php $this->display_disabled(); ?>	
@@ -60,6 +58,38 @@ class sapAdminPageSettingSelect_2_6_19 extends sapAdminPageSetting_2_6_19 {
 
 		$this->display_description();
 
+	}
+
+	/**
+	 * Recursively print out select options
+	 * @since 2.6.18
+	 */
+	public function print_options( $options ) {
+		
+		$selected_option_value = $this->value !== null ? $this->value : 
+			( $this->default !== null ? $this->default : null );
+
+		foreach ( $options as $option_value => $option_name ) {
+
+			if ( is_array( $option_name ) ) { ?>
+
+				<optgroup label='<?php echo esc_attr( $option_value ); ?>'>
+					<?php $this->print_options( $option_name ); ?>
+				</optgroup>
+
+				<?php
+
+				continue;
+			}
+
+			?>
+
+			<option value='<?php echo esc_attr( $option_value ); ?>' <?php echo ( $selected_option_value == $option_value ? 'selected' : '' ); ?>>
+				<?php echo esc_html( $option_name ); ?>
+			</option>
+		
+			<?php 
+		}
 	}
 
 }

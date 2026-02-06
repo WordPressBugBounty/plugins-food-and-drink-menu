@@ -25,8 +25,8 @@ jQuery(document).ready(function ($) {
         });
   
       });
-
-      if ( main_input_val.length ) { main_input.val( JSON.stringify( main_input_val ) ); }
+      
+      if ( Object.keys( main_input_val ).length ) { main_input.val( JSON.stringify( main_input_val ) ); }
     });
   });
 

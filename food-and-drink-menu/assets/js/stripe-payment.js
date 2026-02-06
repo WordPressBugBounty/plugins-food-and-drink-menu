@@ -35,6 +35,10 @@ jQuery(document).ready(function($) {
 			var email = jQuery( 'input[name="fdm_ordering_email"]' ).val();
 			var phone = jQuery( 'input[name="fdm_ordering_phone"]' ).val();
 			var note = jQuery( 'textarea[name="fdm_ordering_note"]' ).val();
+			var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
+			var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
+			var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
+			var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
 	
 			var custom_fields = {};
 			jQuery( '.fdm-ordering-custom-fields' ).find( 'input, textarea, select' ).each( function() {
@@ -52,13 +56,17 @@ jQuery(document).ready(function($) {
 				email: email,
 				phone: phone,
 				note: note,
+				pickup_time: pickup_time,
+				delivery: delivery,
+				tip_amount: tip_amount,
+				discount_code: discount_code,
 				custom_fields: custom_fields,
 				nonce: fdm_stripe_payment.nonce,
 				post_status: 'draft',
 				action: 'fdm_submit_order'
 			});
-	
-			var response = await jQuery.post( ajaxurl, data ).promise();
+			
+			var response = await jQuery.post( ajaxurl, data ).promise(); 
 	
 			if ( ! response.success ) {
 				jQuery( '#fdm-order-submit-button' ).before( '<p>Order could not be processed. Please contact the site administrator.' );
