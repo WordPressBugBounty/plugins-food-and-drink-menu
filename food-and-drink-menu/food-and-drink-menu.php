@@ -3,7 +3,7 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.5.0
+ * Version: 2.5.1
  * Requires at least: 6.0
  * Author: Five Star Plugins
  * Author URI: https://www.fivestarplugins.com/
@@ -43,7 +43,7 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.5.0' );
+		define( 'FDM_VERSION', '2.5.1' );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -785,31 +785,60 @@ class fdmFoodAndDrinkMenu {
 
 	public function maybe_display_new_plugin_notice() {
 
+		if ( ! current_user_can( 'activate_plugins' ) ) { return; }
+
 		$screen = get_current_screen();
-	    if (!isset($screen->id) || strpos($screen->id, 'fdm-menu_page') === false) { return; }
-	
-		if ( get_transient( 'fdm-ait-iat-plugin-notice-dismissed' ) ) { return; }
-	
-		// October 17th, 2025
-		if ( time() > 1760759940 ) { return; }
-	
+		
+        if ( ! isset( $screen->id ) ) { return; }
+
+        $allowed_screens = array( 
+        	'plugins', 
+        	'update-core', 
+        	'dashboard', 
+        	'options-general', 
+        	'options-writing', 
+        	'options-reading', 
+        	'options-discussion', 
+        	'options-media',
+        	'options-permalink',
+        	'options-privacy'
+        );
+
+        if ( strpos( $screen->id, 'fdm-menu_page' ) === false and 
+        	 ! in_array( $screen->id, $allowed_screens ) ) { 
+        	return; 
+    	}
+
+		if ( get_transient( 'ait-aiaa-plugin-notice-dismissed' ) ) { return; }
+
+		// May 22nd, 2026
+		if ( time() > 1779508748 ) { return; }
+
+		$hook_lines = array(
+			__( 'Tired of digging through settings? Let <strong>AI Admin Assistance</strong> guide you!', 'food-and-drink-menu' ),
+			__( 'Stop wasting time searching for answers—use <strong>AI Admin Assistance</strong> to bring AI-powered help directly into your dashboard!', 'food-and-drink-menu' ),
+			__( 'Overwhelmed in the WordPress admin? <strong>AI Admin Assistance</strong> has you covered with AI-powered help directly in your dashboard!', 'food-and-drink-menu' ),
+		);
+
+		$selection = array_rand( $hook_lines );
+
 		?>
-	
-		<div class='notice notice-error is-dismissible ait-iat-new-plugin-notice'>
-				
+
+		<div class='notice notice-error is-dismissible ait-aiaa-new-plugin-notice'>
+			
 			<div class='fdm-new-plugin-notice-img'>
-				<img src='<?php echo FDM_PLUGIN_URL . '/assets/img/ait-iat-plugin-icon.png' ; ?>' />
+				<img src='<?php echo FDM_PLUGIN_URL . '/assets/img/ait-aiaa-plugin-icon.png' ; ?>' />
 			</div>
-	
+
 			<div class='fdm-new-plugin-notice-txt'>
-				<p><?php _e( 'Want to improve your search rankings? Try our new <strong>AI Image Alt Text</strong> plugin!', 'food-and-drink-menu' ); ?></p>
-				<p><?php echo sprintf( __( 'As a thank you to our customers, for a limited time you can get a <strong>free pro license</strong>! Try the <a target=\'_blank\' href=\'%s\'>free version</a> today or use code <code>early_adopter_pro</code> to <a target=\'_blank\' href=\'%s\'>get your pro version license</a>!', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ai-image-alt-text' ), 'https://www.wpaiplugins.dev/wordpress-image-alt-text-ai-plugin/' ); ?></p>
+				<p><?php echo $hook_lines[ $selection ]; ?></p>
+                <p><?php echo sprintf( __( 'As a thank you to our customers, for a limited time you can get a <strong>free pro license</strong>! Try the <a target=\'_blank\' href=\'%s\'>free version</a> today or use code <code>early_adopter_pro</code> to <a target=\'_blank\' href=\'%s\'>get your pro version license</a>!', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ait-ai-admin-assistance' ), 'https://www.wpaiplugins.dev/wordpress-ai-admin-assistance/?utm_source=' . dirname( FDM_PLUGIN_FNAME ) . '_aiaa_notice&utm_content=' . $selection ); ?></p>
 			</div>
-	
+
 			<div class='fdm-clear'></div>
-	
+
 		</div>
-	
+
 		<?php 
 	}
 	
@@ -818,7 +847,7 @@ class fdmFoodAndDrinkMenu {
 	
 		// Authenticate request
 		if (
-			! check_ajax_referer( 'fdm-admin', 'nonce' )
+			! check_ajax_referer( 'fdm-helper-notice', 'nonce' )
 			||
 			! current_user_can( 'manage_options' )
 		) {
@@ -831,7 +860,7 @@ class fdmFoodAndDrinkMenu {
 	
 		}
 	
-		set_transient( 'fdm-ait-iat-plugin-notice-dismissed', true, 3600*24*7 );
+		set_transient( 'ait-aiaa-plugin-notice-dismissed', true, 3600*24*7 );
 	
 		die();
 	}

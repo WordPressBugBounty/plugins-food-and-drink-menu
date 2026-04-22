@@ -4,7 +4,7 @@ Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, online restaurant, restaurant order, mobile restaurant menu, food ordering, mobile food ordering, food menu, food order, food delivery, takeaway, food pickup, online food ordering
 Requires at Least: 6.0
 Tested Up To: 6.9
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -300,6 +300,9 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.5.1 (2026-04-22) =
+- Added a lot of in-admin help content, including guidance, support, links to applicable documentation and an AI assistant. It works via the AI Admin Assistance plugin (https://wordpress.org/plugins/ait-ai-admin-assistance/).
 
 = 2.5.0 (2026-01-08) =
 - **IMPORTANT NOTE: Significant updates have been made to the default "Classic Style" menu style and to the "Image Style" menu style. If you are using either of these menu styles, we highly recommend that you install the update on a staging environment first and test with with the updated style, especially if you have customized the layout and/or CSS.**

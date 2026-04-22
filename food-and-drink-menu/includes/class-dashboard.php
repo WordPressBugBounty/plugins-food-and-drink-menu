@@ -108,6 +108,13 @@ class fdmDashboard {
 				</div>
 			<?php } ?>
 
+			<div class="fdm-dashboard-aiaa-support-notice">
+				<div class="fdm-dashboard-aiaa-support-notice-inside">
+					<span class="dashicons dashicons-info"></span>
+					<p><?php echo sprintf( __( 'Add help to each plugin admin screen! Install <a target=\'_blank\' href=\'%s\'>AI Admin Assistance</a> to view our in-admin help content!', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ait-ai-admin-assistance' ) ); ?></p>
+				</div>
+			</div>
+
 			<?php if ( ! $permission or ! $ultimate or get_option("FDM_Trial_Happening") == "Yes" or get_option("FDMU_Trial_Happening") == "Yes" ) {
 				$premium_info = '<div class="fdm-dashboard-visit-our-site">';
 				$premium_info .= sprintf( __( '<a href="%s" target="_blank">Visit our website</a> to learn how to upgrade to premium.', 'food-and-drink-menu' ), 'https://www.fivestarplugins.com/premium-upgrade-instructions/?utm_source=fdm_dashboard&utm_content=visit_our_site_link' );
