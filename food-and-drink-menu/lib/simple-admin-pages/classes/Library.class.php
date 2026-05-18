@@ -1,5 +1,5 @@
 <?php
-if ( !class_exists( 'sapLibrary_2_7_3' ) ) {
+if ( !class_exists( 'sapLibrary_2_7_4' ) ) {
 /**
  * This library class loads and provides access to the correct version of the
  * Simple Admin Pages library.
@@ -7,10 +7,10 @@ if ( !class_exists( 'sapLibrary_2_7_3' ) ) {
  * @since 1.0
  * @package Simple Admin Pages
  */
-class sapLibrary_2_7_3 {
+class sapLibrary_2_7_4 {
 
 	// Version of the library
-	private $version = '2.7.3';
+	private $version = '2.7.4';
 
 	// A full URL to the library which is used to correctly link scripts and
 	// stylesheets.
@@ -50,7 +50,7 @@ class sapLibrary_2_7_3 {
 	public function __construct( $args ) {
 
 		if ( ! defined( 'SAP_VERSION' ) ) {
-			define( 'SAP_VERSION', '2.7.3' );
+			define( 'SAP_VERSION', '2.7.4' );
 		}
 
 		// If no URL path to the library is passed, we won't be able to add the
@@ -59,7 +59,7 @@ class sapLibrary_2_7_3 {
 			$this->set_error(
 				array(
 					'id' 		=> 'no-lib-url',
-					'desc'		=> 'No URL path to the library provided when the libary was created.',
+					'desc'		=> 'No URL path to the library provided when the library was created.',
 					'var'		=> $args,
 					'line'		=> __LINE__,
 					'function'	=> __FUNCTION__

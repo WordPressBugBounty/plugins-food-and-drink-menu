@@ -25,7 +25,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingInfiniteTable_2_7_3 extends sapAdminPageSetting_2_7_3 {
+class sapAdminPageSettingInfiniteTable_2_7_4 extends sapAdminPageSetting_2_7_4 {
 
 	public $has_editor = false; // Whether an editor field is included in the table columns
 	public $add_label = '+ Add Row'; // Label applied to the add row button
@@ -67,7 +67,7 @@ class sapAdminPageSettingInfiniteTable_2_7_3 extends sapAdminPageSetting_2_7_3 {
 	public function display_setting() {
 
 		$input_name = $this->get_input_name();
-		$values = json_decode( html_entity_decode( $this->value ) );
+		$values = json_decode( html_entity_decode( $this->value ?? '' ) ) ?? [];
 		
 		$this->fields = array_filter( $this->fields );
 

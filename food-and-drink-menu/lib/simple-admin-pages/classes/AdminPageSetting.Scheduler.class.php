@@ -10,7 +10,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingScheduler_2_7_3 extends sapAdminPageSetting_2_7_3 {
+class sapAdminPageSettingScheduler_2_7_4 extends sapAdminPageSetting_2_7_4 {
 
 	public $sanitize_callback = 'sanitize_text_field';
 
@@ -313,7 +313,7 @@ class sapAdminPageSettingScheduler_2_7_3 extends sapAdminPageSetting_2_7_3 {
 			<div class="sap-scheduler <?php echo ( $this->disabled ? 'disabled' : ''); ?>" id="<?php echo esc_attr( $this->id ); ?>" data-next_rule_id="<?php echo esc_attr( $this->get_next_rule_id() ); ?>">
 			<?php
 				foreach ( $this->value as $id => $rule ) {
-					echo wp_kses_post( $this->get_template( $id, $rule, true ) );
+					echo $this->get_template( $id, $rule, true );
 				}
 			?>
 			</div>

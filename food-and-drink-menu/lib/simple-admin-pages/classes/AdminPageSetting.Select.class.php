@@ -21,7 +21,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingSelect_2_7_3 extends sapAdminPageSetting_2_7_3 {
+class sapAdminPageSettingSelect_2_7_4 extends sapAdminPageSetting_2_7_4 {
 
 	public $sanitize_callback = 'sanitize_text_field';
 

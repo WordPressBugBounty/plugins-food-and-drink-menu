@@ -65,6 +65,7 @@ class fdmViewItem extends fdmView {
 	public $ordering_available;
 	public $ordering_options;
 	public $special_title;
+	public $related_items;
 
 	// Item order content
 	public $selected_options;

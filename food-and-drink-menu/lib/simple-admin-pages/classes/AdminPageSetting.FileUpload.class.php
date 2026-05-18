@@ -15,7 +15,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingFileUpload_2_7_3 extends sapAdminPageSetting_2_7_3 {
+class sapAdminPageSettingFileUpload_2_7_4 extends sapAdminPageSetting_2_7_4 {
 
 	public $sanitize_callback = 'esc_url_raw';
 

@@ -1,10 +1,10 @@
 === Five Star Restaurant Menu and Food Ordering ===
 Contributors: rustaurius
 Donate Link: https://www.etoilewebdesign.com/plugin-donations/
-Tags: restaurant, restaurant menu, online restaurant, restaurant order, mobile restaurant menu, food ordering, mobile food ordering, food menu, food order, food delivery, takeaway, food pickup, online food ordering
+Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
-Tested Up To: 6.9
-Stable tag: 2.5.1
+Tested Up To: 7.0
+Stable tag: 2.5.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -300,6 +300,11 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.5.2 (2026-05-18) =
+- Fix for ordering scheduler sometimes not saving or displaying correctly.
+- Fixed deprecated notices/code.
+- Compatibility updates for WordPress 7.0.
 
 = 2.5.1 (2026-04-22) =
 - Added a lot of in-admin help content, including guidance, support, links to applicable documentation and an AI assistant. It works via the AI Admin Assistance plugin (https://wordpress.org/plugins/ait-ai-admin-assistance/).

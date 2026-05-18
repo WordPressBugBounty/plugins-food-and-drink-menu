@@ -18,7 +18,7 @@
  * @package Simple Admin Pages
  */
 
-class sapAdminPageSettingOrdering_2_7_3 extends sapAdminPageSetting_2_7_3 {
+class sapAdminPageSettingOrdering_2_7_4 extends sapAdminPageSetting_2_7_4 {
 
 	public $items;
 
@@ -57,7 +57,7 @@ class sapAdminPageSettingOrdering_2_7_3 extends sapAdminPageSetting_2_7_3 {
 	public function display_setting() {
 
 		$input_name = $this->get_input_name();
-		$values = is_array( $this->value ) ? $this->value : json_decode( html_entity_decode( $this->value ), true );
+		$values = is_array( $this->value ) ? $this->value : json_decode( html_entity_decode( $this->value ?? '' ), true );
 
 		if ( ! is_array( $values ) )
 			$values = array();

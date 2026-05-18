@@ -269,7 +269,7 @@ Click on the following link to accept the order: {accept_link}
 		// Insantiate the Simple Admin Library so that we can add a settings page
 		$sap = sap_initialize_library(
 			array(
-				'version'		=> '2.7.3', // Version of the library
+				'version'		=> '2.7.4', // Version of the library
 				'lib_url'		=> FDM_PLUGIN_URL . '/lib/simple-admin-pages/', // URL path to sap library
 				'theme'			=> 'blue',
 			)
@@ -852,7 +852,7 @@ Click on the following link to accept the order: {accept_link}
 	 */
 	public function get_menu_item_custom_fields() {
 
-		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ) );
+		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ?? '' ) );
 
 		$fields = is_array( $fields ) ? $fields : array();
 
@@ -875,7 +875,7 @@ Click on the following link to accept the order: {accept_link}
 	 */
 	public function get_ordering_custom_fields() {
 
-		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ) );
+		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ?? '' ) );
 
 		$fields = is_array( $fields ) ? $fields : array();
 

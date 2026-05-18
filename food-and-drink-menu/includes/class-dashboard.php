@@ -111,7 +111,7 @@ class fdmDashboard {
 			<div class="fdm-dashboard-aiaa-support-notice">
 				<div class="fdm-dashboard-aiaa-support-notice-inside">
 					<span class="dashicons dashicons-info"></span>
-					<p><?php echo sprintf( __( 'Add help to each plugin admin screen! Install <a target=\'_blank\' href=\'%s\'>AI Admin Assistance</a> to view our in-admin help content!', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ait-ai-admin-assistance' ) ); ?></p>
+					<p><?php echo sprintf( __( 'We\'ve added in-admin help, support and an AI assistant for this plugin! Install <a target=\'_blank\' href=\'%s\'>AI Admin Assistance</a> to view and access it.', 'food-and-drink-menu' ), admin_url( 'plugin-install.php?tab=plugin-information&plugin=ait-ai-admin-assistance' ) ); ?></p>
 				</div>
 			</div>
 
