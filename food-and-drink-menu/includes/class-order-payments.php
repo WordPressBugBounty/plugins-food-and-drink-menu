@@ -358,9 +358,16 @@ class fdmOrderPayments {
 
         		$order->post_status = 'fdm_order_received';
 
-        		$order->payment_amount = $fdm_controller->settings->get_setting( 'ordering-currency' ) != 'JPY' ? intval( $_POST['payment_amount'] ) / 100 : intval( $_POST['payment_amount'] );
+       			// load the stripe libraries
+				require_once( FDM_PLUGIN_DIR . '/lib/stripe/init.php' );
 
-        		$order->receipt_id = sanitize_text_field( $_POST['payment_id'] );
+				\Stripe\Stripe::setApiKey( $this->get_secret() );
+
+				$intent = \Stripe\PaymentIntent::retrieve( $order->stripe_payment_intent_id );
+
+				$order->payment_amount = $fdm_controller->settings->get_setting( 'ordering-currency' ) != 'JPY' ? $intent->amount / 100 : $intent->amount;
+				
+				$order->receipt_id = $intent->id;
 
         		// Not needed anymore
         		unset( $order->stripe_payment_intent_id );
@@ -394,13 +401,41 @@ class fdmOrderPayments {
   	}
 
 	/**
-	 * Validate the payment success request by verifing the payment_intent ID
+	 * Validate the payment success request by verifying the payment_intent ID
 	 * 
 	 * @return bool true on valid else false
 	 */
 	public function valid_payment( $order ) {
+		global $fdm_controller;
 
-    	return sanitize_text_field( $_POST['payment_id'] ) == $order->stripe_payment_intent_id;
+		if ( empty( $order->stripe_payment_intent_id ) ) { return false; }
+
+		$posted_id = sanitize_text_field( $_POST['payment_id'] ?? '' );
+		if ( $posted_id !== $order->stripe_payment_intent_id ) { return false; }
+
+		try {
+
+			// load the stripe libraries
+			require_once( FDM_PLUGIN_DIR . '/lib/stripe/init.php' );
+
+			\Stripe\Stripe::setApiKey( $this->get_secret() );
+
+			$intent = \Stripe\PaymentIntent::retrieve( $order->stripe_payment_intent_id );
+
+			$is_hold = $fdm_controller->settings->get_setting( 'fdm-stripe-hold' );
+			$valid_status = $is_hold ? 'requires_capture' : 'succeeded';
+
+			return $intent->status === $valid_status;
+		} 
+		catch ( Exception $ex ) {
+
+			if ( defined('WP_DEBUG') && WP_DEBUG ) {
+
+				error_log( sprintf( __( 'Five Star FDM Stripe valid_payment error: %s', 'food-and-drink-menu' ), $ex->getMessage() ) );
+			}
+
+			return false;
+		}
   	}
 
 	/**

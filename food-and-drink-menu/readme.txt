@@ -4,7 +4,8 @@ Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.0
-Stable tag: 2.5.2
+Requires PHP: 8.0
+Stable tag: 2.5.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -300,6 +301,9 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.5.3 (2026-06-03) =
+- Releasing the validated fix for a Patchstack reported vulnerability.
 
 = 2.5.2 (2026-05-18) =
 - Fix for ordering scheduler sometimes not saving or displaying correctly.

@@ -3,8 +3,9 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.5.2
+ * Version: 2.5.3
  * Requires at least: 6.0
+ * Requires PHP: 8.0
  * Author: Five Star Plugins
  * Author URI: https://www.fivestarplugins.com/
  * Text Domain: food-and-drink-menu
@@ -43,7 +44,7 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.5.2' );
+		define( 'FDM_VERSION', '2.5.3' );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );

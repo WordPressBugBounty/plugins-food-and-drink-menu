@@ -81,6 +81,12 @@ class fdmOrderItem {
 	// The custom fields associated with this order
 	public $custom_fields = array();
 
+	// Stripe payment properties
+	public $stripe_payment_intent_id;
+	public $stripe_payment_hold_status;
+	public $stripe_customer_id;
+	public $edit_confirmation_code;
+
 	// Stores any errors found during the validation process
 	public $validation_errors = array();
 
@@ -132,10 +138,12 @@ class fdmOrderItem {
 			'receipt_id' => '',
 			'discount_code' => '',
 			'payment_amount' => 0,
+			'order_total' => 0,
 			'subtotal' => 0,
 			'tax_amount' => 0,
 			'delivery_amount' => 0,
 			'tip_amount' => 0,
+			'discount_amount' => 0,
 			'estimated_time' => '24:00',
 			'permalink' => get_site_url(),
 			'custom_fields' => array()
