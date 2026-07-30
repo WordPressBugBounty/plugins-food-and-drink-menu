@@ -457,6 +457,17 @@
 	border-color: #ece2f3;
 	color: #212427;
 }
+.fdm-dashboard-visit-site-to-learn-about-trial {
+	margin-top: 12px;
+	color: #fff;
+}
+.fdm-dashboard-visit-site-to-learn-about-trial a {
+	color: #fff;
+	transition: color .35s;
+}
+.fdm-dashboard-visit-site-to-learn-about-trial a:hover {
+	color: #cad5e9;
+}
 .fsp-premium-helper-dashboard-get-premium-widget-button  {
 	background: transparent !important;
 	border: 1px solid #fff !important;
@@ -807,6 +818,7 @@
 .fdm-settings-preview-images {
 	display: flex;
 	justify-content: space-between;
+	flex-wrap: wrap;
 	width: 100%;
 }
 .fdm-settings-preview-images img {

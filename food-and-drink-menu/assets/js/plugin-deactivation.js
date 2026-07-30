@@ -1,6 +1,7 @@
 jQuery(function($){
 	var $deactivateLink = $('#the-list').find('[data-slug="food-and-drink-menu"] span.deactivate a'),
 		$overlay        = $('#fdm-deactivate-survey-restaurant-menu'),
+		$cancelButton   = $('#fdm-deactivation-cancel'),
 		$form           = $overlay.find('form'),
 		formOpen        = false;
 	// Plugin listing table deactivate link.
@@ -9,6 +10,11 @@ jQuery(function($){
 		$overlay.css('display', 'table');
 		formOpen = true;
 		$form.find('.fdm-deactivate-survey-option:first-of-type input[type=radio]').focus();
+	});
+	// Exit the survey without deactivating or submitting the form
+	$cancelButton.on( 'click', function( event ) {
+	 	$overlay.css('display', 'none');
+	 	formOpen = false;
 	});
 	// Survey radio option selected.
 	$form.on('change', 'input[type=radio]', function(event) {
@@ -34,7 +40,7 @@ jQuery(function($){
 			install_time: $form.data('installtime'),
 			reason: $form.find('.selected .fdm-deactivate-survey-option-reason').text(),
 			details: $form.find('.selected input[type=text]').val(),
-			site: grfwp_deactivation_data.site_url,
+			site: fdm_deactivation_data.site_url,
 			plugin: 'Five-Star Restaurant Menu'
 		}
 		var submitSurvey = $.post('https://www.fivestarplugins.com/key-check/Deactivation_Surveys.php', data);

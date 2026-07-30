@@ -55,8 +55,8 @@ class fdmDeactivationSurvey {
 		<div class="fdm-deactivate-survey-modal" id="fdm-deactivate-survey-restaurant-menu">
 			<div class="fdm-deactivate-survey-wrap">
 				<form class="fdm-deactivate-survey" method="post" data-installtime="<?php echo $install_time; ?>">
-					<span class="fdm-deactivate-survey-title"><span class="dashicons dashicons-testimonial"></span><?php echo ' ' . __( 'Quick Feedback', 'food-and-drink-menu' ); ?></span>
-					<span class="fdm-deactivate-survey-desc"><?php echo __('If you have a moment, please share why you are deactivating Five-Star Restaurant Menu:', 'food-and-drink-menu' ); ?></span>
+					<span class="fdm-deactivate-survey-title"><span class="dashicons dashicons-testimonial"></span><?php echo ' ' . __( 'Quick Feedback', 'food-and-drink-menu' ); ?><span id="fdm-deactivation-cancel">X</span></span>
+					<span class="fdm-deactivate-survey-desc"><?php echo __('Need help? Contact us at <a href="mailto:contact@fivestarplugins.com">contact@fivestarplugins.com</a> for a quick reply!<br/> Please share why you are deactivating Five-Star Restaurant Menu:', 'food-and-drink-menu' ); ?></span>
 					<div class="fdm-deactivate-survey-options">
 						<?php foreach ( $options as $id => $option ) : ?>
 							<div class="fdm-deactivate-survey-option">

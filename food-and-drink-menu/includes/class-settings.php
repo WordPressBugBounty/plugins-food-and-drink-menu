@@ -721,23 +721,31 @@ Click on the following link to accept the order: {accept_link}
 
 		$content = '';
 
-		$also_gives_access_to = ( $section_and_perm_type == 'ordering' ? __( 'The ultimate version also gives you access to all of the premium features, including:', 'food-and-drink-menu' ) : __( 'The premium version also gives you access to the following features:', 'food-and-drink-menu' ) );
+		$also_gives_access_to = ( $section_and_perm_type == 'ordering' ? __( 'The premium and ultimate versions also gives you access to all of the following features:', 'food-and-drink-menu' ) : __( 'The premium version also gives you access to the following features:', 'food-and-drink-menu' ) );
 
 		$premium_features = '
-			<p><strong>' . $also_gives_access_to . '</strong></p>
-			<ul class="fdm-dashboard-new-footer-one-benefits">
-				<li>' . __( 'Advanced Menu Layouts', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Custom Menu Fields', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Sorting and Filtering', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Dietary Icons', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Featured Item Flag', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Special/Discount Pricing', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Advanced Styling Options', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Advanced Labelling Options', 'food-and-drink-menu' ) . '</li>
-				<li>' . __( 'Email Support', 'food-and-drink-menu' ) . '</li>
-			</ul>
-			<div class="fdm-dashboard-new-footer-one-buttons">
-				<a class="fdm-dashboard-new-upgrade-button" href="https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1&utm_source=fdm_settings&utm_content=' . $section_and_perm_type . '" target="_blank">' . __( 'UPGRADE NOW', 'food-and-drink-menu' ) . '</a>
+			<div class="fdm-settings-preview-other-features">
+				<div id="fdm-dashboard-new-footer-one">
+					<div class="fdm-dashboard-new-footer-one-inside">
+						<div class="fdm-dashboard-new-footer-one-left">
+							<div class="fdm-dashboard-new-footer-one-title">' . $also_gives_access_to . '</div>
+							<ul class="fdm-dashboard-new-footer-one-benefits">
+								<li>' . __( 'Advanced Menu Layouts', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Custom Menu Fields', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Sorting and Filtering', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Dietary Icons', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Featured Item Flag', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Special/Discount Pricing', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Advanced Styling Options', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Advanced Labelling Options', 'food-and-drink-menu' ) . '</li>
+								<li>' . __( 'Email Support', 'food-and-drink-menu' ) . '</li>
+							</ul>
+						</div>
+						<div class="fdm-dashboard-new-footer-one-buttons">
+							<a class="fdm-dashboard-new-upgrade-button" href="https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1&utm_source=fdm_settings&utm_content=' . $section_and_perm_type . '" target="_blank">' . __( 'UPGRADE NOW', 'food-and-drink-menu' ) . '</a>
+						</div>
+					</div>
+				</div>
 			</div>
 		';
 
@@ -763,7 +771,7 @@ Click on the following link to accept the order: {accept_link}
 
 				$content = '
 					<div class="fdm-settings-preview">
-						<h2>' . __( 'Ordering', 'food-and-drink-menu' ) . '<span>' . __( 'Ultimate', 'food-and-drink-menu' ) . '</span></h2>
+						<h2>' . __( 'Ordering', 'food-and-drink-menu' ) . '<span>' . __( 'Premium/Ultimate', 'food-and-drink-menu' ) . '</span></h2>
 						<p>' . __( 'You can allow your customers to place orders directly from your menu. There are options to require payment (PayPal or Stripe), set a minimum amount for ordering, set a schedule for when ordering should be available and more!', 'food-and-drink-menu' ) . '</p>
 						<p>' . __( 'You can also enable <strong>SMS</strong> or email notifications for your customers. And it syncs with our <strong>Five Star Star Restaurant Manager mobile app</strong>, so you can manage your orders either from the kitchen or on the go!', 'food-and-drink-menu' ) . '</p>
 						<div class="fdm-settings-preview-images">

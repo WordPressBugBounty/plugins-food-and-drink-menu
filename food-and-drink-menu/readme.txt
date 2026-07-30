@@ -5,7 +5,7 @@ Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.0
 Requires PHP: 8.0
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -301,6 +301,11 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.5.4 (2026-07-30) =
+- Fixed a few admin styling issues.
+- Fixed a few deprecated notices.
+- Added a direct support option to the deactivation survey, making it easier to get help right away if you're uninstalling due to an issue.
 
 = 2.5.3 (2026-06-03) =
 - Releasing the validated fix for a Patchstack reported vulnerability.

@@ -40,6 +40,11 @@
 	color: #999;
 	margin-right: 10px;
 }
+#fdm-deactivation-cancel {
+	display: inline-block;
+    float: right;
+    cursor: pointer;
+}
 .fdm-deactivate-survey-desc {
 	display: block;
 	font-weight: 600;

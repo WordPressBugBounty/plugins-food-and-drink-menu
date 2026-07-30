@@ -251,6 +251,8 @@ class fdmDashboard {
 							<div class="fdm-dashboard-new-footer-one-buttons">
 								<a class="fdm-dashboard-new-upgrade-button" href="https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1&utm_source=fdm_dashboard&utm_content=footer_upgrade" target="_blank">UPGRADE NOW</a>
 								<?php if ( ! get_option("FDM_Trial_Happening") and ! get_option( "FDMU_Trial_Happening" ) ) { 
+									$trial_info = sprintf( __( '<div class="fdm-dashboard-visit-site-to-learn-about-trial"><a href="%s" target="_blank">Visit our website</a> to learn how to get a free 7-day trial of the premium or ultimate versions.</div>'), 'https://www.fivestarplugins.com/premium-upgrade-instructions/?utm_source=fdm_dashboard&utm_content=sidebar_visit_our_site_link' );
+
 									$version_select_modal = '<div class="fdm-trial-version-select-modal fdm-hidden">';
 									$version_select_modal .= '<div class="fdm-trial-version-select-modal-title">' . __( 'Select version to trial', 'food-and-drink-menu' ) . '</div>';
 									$version_select_modal .= '<div class="fdm-trial-version-select-modal-option"><input type="radio" value="premium" name="fdm-trial-version" checked /> ' . __( 'Premium', 'food-and-drink-menu' ) . '</div>';
