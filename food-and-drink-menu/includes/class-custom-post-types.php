@@ -374,18 +374,6 @@ class fdmCustomPostTypes {
 			);
 		}
 
-		$specials_permission = $fdm_controller->permissions->check_permission('specials');
-		if ( ! $fdm_controller->settings->get_setting('fdm-disable-specials') and $specials_permission ) {
-			$meta_boxes['fdm_menu_item_specials'] = array(
-				'id'		=>	'fdm_item_special',
-				'title'		=> __( 'Specials', 'food-and-drink-menu-pro' ),
-				'callback'	=> array( $this, 'fdmp_show_item_special' ),
-				'post_type'	=> 'fdm-menu-item',
-				'context'	=> 'side',
-				'priority'	=> 'default'
-			);
-		}
-
 		$sources_permission = $fdm_controller->permissions->check_permission('sources');
 		if ( ! $fdm_controller->settings->get_setting('fdm-disable-src') and $sources_permission ) {
 			$meta_boxes['fdm_menu_item_source'] = array(
@@ -481,35 +469,51 @@ class fdmCustomPostTypes {
 	public function fdmp_show_item_discounted_price() {
 		global $fdm_controller, $post;
 
-		if ( ! $fdm_controller->permissions->check_permission( 'discounts' ) ) { return; }
-	
 		// Retrieve values for this if it exists
 		$price_discount = get_post_meta( $post->ID, 'fdm_item_price_discount', true );
+		$special_selected = get_post_meta( $post->ID, 'fdm_item_special', true );
 	
 		// If we don't have a $post, this is being printed in the quick edit
 		// panel. Input fields can't have name attributes because it messes with
 		// the menu item filter forms.
 		// @see https://github.com/NateWr/food-and-drink-menu/issues/35
-		$input_attrs = '';
+		$input_name = '';
 		$screen = get_current_screen();
 		if ( is_object( $screen ) && $screen->base === 'post' ) {
-			$input_attrs = ' name="fdm_item_price_discount"';
+			$input_name = 'name';
 		} else {
-			$input_attrs = ' data-name="fdm_item_price_discount"';
+			$input_name = 'data-name';
 		}
 	
 	
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) :
-			?>
-	
-				<div class="fdm-input-control fdm-input-price-discount">
-					<label for="fdm_item_price_discount"><?php echo __( 'Discounted Price', 'food-and-drink-menu-pro' ); ?></label>
-					<input type="text"<?php echo $input_attrs; ?> id="fdm_item_price_discount" value="<?php echo esc_attr( $price_discount ); ?>">
-					<p class="description"><?php echo __( 'Enter a special discounted price if you want the regular price to appear crossed out.', 'food-and-drink-menu-pro' ); ?></p>
-				</div>
-	
-			<?php
-		endif;
+		$special_options = array( '' => __( 'None', 'food-and-drink-menu' ), 'sale' => __( 'On Sale', 'food-and-drink-menu' ) );
+		if ( $fdm_controller->permissions->check_permission( 'specials' ) && ! $fdm_controller->settings->get_setting( 'fdm-disable-specials' ) ) {
+			$special_options += array(
+				'offer' => __( 'Special Offer', 'food-and-drink-menu' ),
+				'featured' => __( 'Featured', 'food-and-drink-menu' ),
+				'sold_out' => __( 'Sold Out', 'food-and-drink-menu' ),
+			);
+		}
+		if ( $special_selected && ! isset( $special_options[ $special_selected ] ) ) {
+			$special_options[ $special_selected ] = __( 'Saved paid selection (inactive)', 'food-and-drink-menu' );
+		}
+		?>
+		<div class="fdm-input-control fdm-input-special">
+			<label for="fdm_item_special"><?php esc_html_e( 'Sale or Special', 'food-and-drink-menu' ); ?></label>
+			<select name="fdm_item_special" id="fdm_item_special">
+				<?php foreach ( $special_options as $value => $label ) : ?>
+					<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $special_selected, $value ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+		<?php
+		?>
+		<div class="fdm-input-control fdm-input-price-discount">
+			<label for="fdm_item_price_discount"><?php esc_html_e( 'Sale Price', 'food-and-drink-menu' ); ?></label>
+			<input type="text" <?php echo esc_attr( $input_name ); ?>="fdm_item_price_discount" id="fdm_item_price_discount" value="<?php echo esc_attr( $price_discount ); ?>">
+			<p class="description"><?php esc_html_e( 'Enter the sale price. The regular price will appear crossed out when On Sale is selected.', 'food-and-drink-menu' ); ?></p>
+		</div>
+		<?php
 	}
 
 	/**
@@ -841,15 +845,20 @@ class fdmCustomPostTypes {
 	<?php }
 
 	public function save_section_image( $term_id ) {
+		if ( ! current_user_can( 'manage_categories' ) ) return;
+		// WordPress verifies the taxonomy create/edit nonce before firing these hooks.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_POST['fdm_menu_section_image'] ) ) return;
 
-		$current_image_id = get_term_meta( $tag->term_id, '_fdm_menu_section_image', true );
-		$new_image_id = attachment_url_to_postid( esc_url_raw( $_POST['fdm_menu_section_image'] ) );
+		$current_image_id = get_term_meta( $term_id, '_fdm_menu_section_image', true );
+		$new_image_id = attachment_url_to_postid( esc_url_raw( wp_unslash( $_POST['fdm_menu_section_image'] ) ) );
 
 		// Update image
 		if ( $current_image_id != $new_image_id ) {
 
 			update_term_meta( $term_id, '_fdm_menu_section_image', $new_image_id );
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		// Remove image
 		if ( empty( $_POST['fdm_menu_section_image'] ) ) {
@@ -880,8 +889,8 @@ class fdmCustomPostTypes {
 		?>
 
 			<input type="hidden" name="fdm_nonce" value="<?php echo $this->nonce; ?>">
-			<input type="hidden" id="fdm_menu_column_one" name="fdm_menu_column_one" value="<?php esc_attr_e( $column_one ); ?>">
-			<input type="hidden" id="fdm_menu_column_two" name="fdm_menu_column_two" value="<?php esc_attr_e( $column_two ); ?>">
+			<input type="hidden" id="fdm_menu_column_one" name="fdm_menu_column_one" value="<?php echo esc_attr( $column_one ); ?>">
+			<input type="hidden" id="fdm_menu_column_two" name="fdm_menu_column_two" value="<?php echo esc_attr( $column_two ); ?>">
 
 			<p><?php echo __( 'Drag-and-drop Menu Sections into columns on your menu.', 'food-and-drink-menu' ); ?></p>
 
@@ -904,10 +913,10 @@ class fdmCustomPostTypes {
 					<?php else : ?>
 						<ul id="fdm-menu-sections-list" class="fdm-sortable-sections">
 							<?php foreach( $sections as $section ) : ?>
-								<li data-term-id="<?php esc_attr_e( $section->term_id ); ?>">
+								<li data-term-id="<?php echo esc_attr( $section->term_id ); ?>">
 									<div class="fdm-title">
-										<span class="fdm-term-count"><?php esc_html_e( $section->count ); ?></span>
-										<span class="fdm-term-name"><?php esc_html_e( $section->name ); ?></span>
+										<span class="fdm-term-count"><?php echo esc_html( $section->count ); ?></span>
+										<span class="fdm-term-name"><?php echo esc_html( $section->name ); ?></span>
 									</div>
 									<a href="#" class="fdm-edit-section-name">
 										<span class="screen-reader-text">
@@ -960,7 +969,7 @@ class fdmCustomPostTypes {
 
 			<select name="_wp_page_template">
 				<?php foreach( $templates as $val => $label ) : ?>
-					<option value="<?php esc_attr_e( $val ); ?>"<?php if ( $selected == $val ) : ?> selected<?php endif; ?>><?php esc_html_e( $label ); ?></option>
+					<option value="<?php echo esc_attr( $val ); ?>"<?php if ( $selected == $val ) : ?> selected<?php endif; ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>
 			</select>
 			<p>
@@ -1080,6 +1089,12 @@ class fdmCustomPostTypes {
 				}
 			} else {
 				$cur = get_post_meta( $post_id, $meta_id, true );
+				if ( 'fdm_item_special' === $meta_id
+					&& in_array( $cur, array( 'offer', 'featured', 'sold_out' ), true )
+					&& ! $fdm_controller->permissions->check_permission( 'specials' )
+					&& ( ! isset( $_POST[ $meta_id ] ) || sanitize_text_field( wp_unslash( $_POST[ $meta_id ] ) ) === $cur ) ) {
+					continue;
+				}
 				$new = isset( $_POST[$meta_id] ) ? call_user_func( $sanitize_callback, $_POST[$meta_id] ) : '';
 				if ( $new && $new != $cur ) {
 					update_post_meta( $post_id, $meta_id, $new );
@@ -1351,10 +1366,10 @@ class fdmCustomPostTypes {
 			$terms = wp_get_post_terms( $post, 'fdm-menu-section' );
 			$output = array();
 			foreach( $terms as $term ) {
-				$output[] = '<a href="' . admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $term->term_taxonomy_id . '&post_type=fdm-menu-item' ) . '">' . $term->name . '</a>';
+				$output[] = '<a href="' . esc_url( admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $term->term_taxonomy_id . '&post_type=fdm-menu-item' ) ) . '">' . esc_html( $term->name ) . '</a>';
 			}
 
-			echo join( __( ', ', 'Separator in list of Menu Sections', 'food-and-drink-menu' ), $output );
+			echo wp_kses_post( join( esc_html_x( ', ', 'Separator in list of Menu Sections', 'food-and-drink-menu' ), $output ) );
 		}
 	}
 
@@ -1462,8 +1477,8 @@ class fdmCustomPostTypes {
 							<?php $term = $this->get_term_from_array($terms, $id); ?>
 							<?php if ( !empty( $term ) ) : ?>
 								<a href="<?php echo esc_url( admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $id . '&post_type=' . FDM_MENUITEM_POST_TYPE ) ); ?>">
-									<span class="fdm-term-count"><?php esc_html_e( $term->count ); ?></span>
-									<?php echo $term->name; ?>
+									<span class="fdm-term-count"><?php echo esc_html( $term->count ); ?></span>
+									<?php echo esc_html( $term->name ); ?>
 								</a>
 							<?php endif; ?>
 						<?php endforeach; ?>
@@ -1473,8 +1488,8 @@ class fdmCustomPostTypes {
 							<?php $term = $this->get_term_from_array($terms, $id); ?>
 							<?php if ( !empty( $term ) ) : ?>
 								<a href="<?php echo esc_url( admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $id . '&post_type=' . FDM_MENUITEM_POST_TYPE ) ); ?>">
-									<span class="fdm-term-count"><?php esc_html_e( $term->count ); ?></span>
-									<?php echo $term->name; ?>
+									<span class="fdm-term-count"><?php echo esc_html( $term->count ); ?></span>
+									<?php echo esc_html( $term->name ); ?>
 								</a>
 							<?php endif; ?>
 						<?php endforeach; ?>
@@ -1645,16 +1660,16 @@ class fdmCustomPostTypes {
 		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') ) and $flag_permissions ) {
 			$menu_item_taxonomies['fdm-menu-item-flag'] = array(
 				'labels'	=> array(
-					'name' => _x( 'Item Icons', 'taxonomy general name', 'food-and-drink-menu-pro' ),
-					'singular_name' => _x( 'Item Icon', 'taxonomy singular name', 'food-and-drink-menu-pro' ),
-					'search_items' => __( 'Search Item Icons', 'food-and-drink-menu-pro' ),
-					'all_items' => __( 'All Item Icons', 'food-and-drink-menu-pro' ),
-					'parent_item' => __( 'Item Icon', 'food-and-drink-menu-pro' ),
-					'parent_item_colon' => __( 'Item Icon:', 'food-and-drink-menu-pro' ),
-					'edit_item' => __( 'Edit Item Icon', 'food-and-drink-menu-pro' ),
-					'update_item' => __( 'Update Item Icon', 'food-and-drink-menu-pro' ),
-					'add_new_item' => __( 'Add New Item Icon', 'food-and-drink-menu-pro' ),
-					'new_item_name' => __( 'Item Icon', 'food-and-drink-menu-pro' ),
+					'name' => _x( 'Item Attributes', 'taxonomy general name', 'food-and-drink-menu' ),
+					'singular_name' => _x( 'Item Attribute', 'taxonomy singular name', 'food-and-drink-menu' ),
+					'search_items' => __( 'Search Item Attributes', 'food-and-drink-menu' ),
+					'all_items' => __( 'All Item Attributes', 'food-and-drink-menu' ),
+					'parent_item' => __( 'Item Attribute', 'food-and-drink-menu' ),
+					'parent_item_colon' => __( 'Item Attribute:', 'food-and-drink-menu' ),
+					'edit_item' => __( 'Edit Item Attribute', 'food-and-drink-menu' ),
+					'update_item' => __( 'Update Item Attribute', 'food-and-drink-menu' ),
+					'add_new_item' => __( 'Add New Item Attribute', 'food-and-drink-menu' ),
+					'new_item_name' => __( 'Item Attribute', 'food-and-drink-menu' ),
 				),
 				'show_in_rest' => true,
 			);

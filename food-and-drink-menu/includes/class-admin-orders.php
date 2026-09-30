@@ -26,6 +26,8 @@ class fdmAdminOrders {
 	 * @since 2.1.0
 	 */
 	public function add_menu_page() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->check_permission( 'ordering' ) ) { return; }
 		
 		add_submenu_page(
 			'edit.php?post_type=fdm-menu',

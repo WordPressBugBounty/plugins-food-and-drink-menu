@@ -66,6 +66,12 @@ class fdmViewItem extends fdmView {
 	public $ordering_options;
 	public $special_title;
 	public $related_items;
+	public $show_content;
+	public $source_desc;
+	public $source_address;
+	public $source_zoom;
+	public $source_map_enabled = false;
+	public $source_classes = array();
 
 	// Item order content
 	public $selected_options;
@@ -74,6 +80,12 @@ class fdmViewItem extends fdmView {
 	public $item_identifier;
 	public $selected_price;
 	public $order_price;
+	public $pricing_version;
+	public $snapshot_version;
+	public $price_snapshot;
+	public $title_snapshot;
+	public $option_snapshots = array();
+	public $selected_option_snapshots = array();
 
 	public $cart_elements = array( 'title' );
 	
@@ -155,6 +167,13 @@ class fdmViewItem extends fdmView {
 		if ( isset( $this->ordering_available ) && $this->ordering_available && $fdm_controller->orders->is_open_for_ordering() ) {
 			$elements['ordering'] = 'body';
 		}
+		$attribute_position = $fdm_controller->settings->get_setting( 'fdm-styling-attribute-position' );
+		if ( isset( $elements['flags'] ) && in_array( $attribute_position, array( 'below-title', 'below-description' ), true ) ) {
+			$this->elements_order = array_values( array_diff( $this->elements_order, array( 'flags' ) ) );
+			$after = 'below-title' === $attribute_position ? 'title' : 'content';
+			$position = array_search( $after, $this->elements_order, true );
+			array_splice( $this->elements_order, false === $position ? count( $this->elements_order ) : $position + 1, 0, array( 'flags' ) );
+		}
 
 		// Filter the elements and classes
 		$this->elements = apply_filters( 'fdm_menu_item_elements', $elements, $this );
@@ -190,10 +209,9 @@ class fdmViewItem extends fdmView {
 			return;
 		}
 
-		// Gather data if it's not already set
-		if ( ! isset( $this->title ) ) {
-			$this->load_item();
-		}
+		// A canonical cart item already has a title, but still needs image,
+		// prices and ordering options for its first (AJAX) render.
+		$this->load_item();
 
 		// Gather data if it's not already set
 		if ( ! isset( $this->order_price ) ) {
@@ -358,14 +376,16 @@ class fdmViewItem extends fdmView {
 		// Source
 		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-src') ) && $sources_permission && $this->source_name = get_post_meta( $this->id, 'fdm_item_source_name', true ) ) {
 			$this->source_desc = get_post_meta( $this->id, 'fdm_item_source_description', true );
-			if ( empty( $fdm_controller->settings->get_setting('fdm-disable-src-map') ) && $this->source_address = get_post_meta( $this->id, 'fdm_item_source_address', true ) ) {
+			$this->source_address = get_post_meta( $this->id, 'fdm_item_source_address', true );
+			$this->source_map_enabled = $this->source_address && ! $fdm_controller->settings->get_setting( 'fdm-disable-src-map' );
+			if ( $this->source_map_enabled ) {
 				$this->source_zoom = get_post_meta( $this->id, 'fdm_item_source_zoom', true );
 			}
 	
 			if ( isset( $this->source_name ) && $this->source_name ) {
 				$this->source_classes = array( 'fdm-src-panel' );
 	
-				if ( isset( $this->source_address ) && $this->source_address ) {
+				if ( $this->source_map_enabled ) {
 					$this->source_classes[] = 'fdm-src-has-map';
 				}
 			}
@@ -375,24 +395,30 @@ class fdmViewItem extends fdmView {
 	
 		// Menu Item Flags
 		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') ) && $flag_permissions ) {
-			$this->flags = wp_get_post_terms( $this->id, 'fdm-menu-item-flag', array( "fields" => "all" ) );
-			foreach( $this->flags as $flag ) {
-				$flag_meta = get_option( "fdm_menu_item_flag_icon_" . $flag->term_id );
-				$flag->classes = array( 'fdm-flag', 'fdm-flag-' . esc_attr( $flag->slug ) );
-				if ( esc_attr( $flag_meta['fdm_menu_item_flag_icon'] ) != '' ) {
+			$this->flags = array();
+			foreach ( fdm_get_item_attributes( $this->id ) as $attribute ) {
+				$flag = (object) $attribute;
+				$flag->name = $attribute['label'];
+				$flag->classes = array( 'fdm-flag', 'fdm-attribute-' . sanitize_html_class( $attribute['type'] ) );
+				if ( ! empty( $attribute['icon_url'] ) ) {
+					$flag->custom_icon_url = $attribute['icon_url'];
+				} elseif ( ! empty( $attribute['legacy_icon'] ) ) {
 					$flag->classes[] = 'fdm-icon';
-					$flag->classes[] = 'fdm-icon-' . esc_attr( $flag_meta['fdm_menu_item_flag_icon'] );
+					$flag->classes[] = 'fdm-icon-' . sanitize_html_class( $attribute['legacy_icon'] );
 				} else {
 					$flag->classes[] = 'fdm-item-flag-text';
 					$flag->text_only = true;
 				}
+				$this->flags[] = $flag;
 			}
 		}
 
 		$discount_permissions = $fdm_controller->permissions->check_permission( 'discounts' );
+		$stored_special = get_post_meta( $this->id, 'fdm_item_special', true );
+		$explicit_sale = 'sale' === $stored_special;
 	
 		// Discounted price
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-price') ) && $discount_permissions && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) {
+		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-price') ) && ( $explicit_sale || ( $discount_permissions && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) ) ) {
 			$this->price_discount = get_post_meta( $this->id, 'fdm_item_price_discount', true );
 
 			if ( $this->price_discount ) {
@@ -411,8 +437,8 @@ class fdmViewItem extends fdmView {
 		$specials_permissions = $fdm_controller->permissions->check_permission( 'specials' );
 	
 		// Specials
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-specials') ) && $specials_permissions ) {
-			$this->special = get_post_meta( $this->id, 'fdm_item_special', true );
+		if ( $explicit_sale || ( empty( $fdm_controller->settings->get_setting('fdm-disable-specials') ) && $specials_permissions ) ) {
+			$this->special = $stored_special;
 			if ( $this->special == 'none' || !$this->special ) {
 				$this->special = false;
 			} elseif ( $this->special == 'sold_out' ) {

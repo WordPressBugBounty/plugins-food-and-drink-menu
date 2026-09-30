@@ -150,7 +150,7 @@ function fdm_global_unique_id() {
  */
 function fdm_format_classes($classes) {
 	if (count($classes)) {
-		return ' class="' . join(" ", $classes) . '"';
+		return ' class="' . esc_attr( join( ' ', array_map( 'sanitize_html_class', $classes ) ) ) . '"';
 	}
 }
 
@@ -198,7 +198,8 @@ function fdm_calculate_cart_price( $menu_item ) {
 
 	foreach ( $selected_options as $selected_option ) { 
 
-		$option_price = is_numeric( str_replace( ',', '.', $ordering_options[ $selected_option ]['cost'] ) ) ? str_replace( ',', '.', $ordering_options[ $selected_option ]['cost'] ) : 0;
+		$option_cost = isset( $ordering_options[ $selected_option ]['cost'] ) ? $ordering_options[ $selected_option ]['cost'] : 0;
+		$option_price = is_numeric( str_replace( ',', '.', $option_cost ) ) ? str_replace( ',', '.', $option_cost ) : 0;
 		$price += $option_price; 
 	}
 
@@ -210,6 +211,15 @@ function fdm_calculate_cart_price( $menu_item ) {
  * @since 2.1.11
  */
 function fdm_calculate_admin_price( $order_item ) {
+	if ( isset( $order_item->price_snapshot ) && is_numeric( $order_item->price_snapshot ) ) {
+		$quantity = isset( $order_item->quantity ) ? max( 1, intval( $order_item->quantity ) ) : 1;
+		$price = (float) $order_item->price_snapshot * $quantity;
+		foreach ( isset( $order_item->option_snapshots ) && is_array( $order_item->option_snapshots ) ? $order_item->option_snapshots : array() as $option ) {
+			$price += ( isset( $option['cost'] ) ? (float) $option['cost'] : 0 ) * $quantity;
+		}
+
+		return apply_filters( 'fdm_admin_price_value', $price, $order_item );
+	}
 
 	$ordering_options = get_post_meta( $order_item->id, '_fdm_ordering_options', true );
 	if ( ! is_array( $ordering_options ) ) { $ordering_options = array(); }
@@ -349,4 +359,97 @@ function fdm_hide_ordering_features( $classes ) {
 	$classes[] = 'fdm-hide-ordering-features';
 
 	return $classes;
+}
+
+/**
+ * Return the immutable order-time item title with a legacy fallback.
+ */
+function fdm_get_order_item_title( $order_item ) {
+	if ( ! empty( $order_item->title_snapshot ) ) return $order_item->title_snapshot;
+	if ( ! empty( $order_item->title ) ) return $order_item->title;
+	$current_title = ! empty( $order_item->id ) ? get_the_title( $order_item->id ) : '';
+	/* translators: %s: legacy menu item identifier. */
+	return $current_title ?: sprintf( __( 'Legacy item data unavailable (item %s)', 'food-and-drink-menu' ), isset( $order_item->id ) ? $order_item->id : __( 'unknown', 'food-and-drink-menu' ) );
+}
+
+/**
+ * Return immutable order-time options with a current-definition fallback.
+ */
+function fdm_get_order_item_option_snapshots( $order_item ) {
+	if ( isset( $order_item->selected_option_snapshots ) && is_array( $order_item->selected_option_snapshots ) && $order_item->selected_option_snapshots ) return $order_item->selected_option_snapshots;
+	if ( isset( $order_item->option_snapshots ) && is_array( $order_item->option_snapshots ) && $order_item->option_snapshots ) return $order_item->option_snapshots;
+
+	$definitions = get_post_meta( $order_item->id, '_fdm_ordering_options', true );
+	$definitions = is_array( $definitions ) ? $definitions : array();
+	$options = array();
+	foreach ( is_array( $order_item->selected_options ) ? $order_item->selected_options : array() as $selected ) {
+		if ( ! isset( $definitions[ $selected ] ) ) {
+			$options[] = array(
+				'id'   => (string) $selected,
+				/* translators: %s: legacy option identifier. */
+				'name' => sprintf( __( 'Legacy option data unavailable (option %s)', 'food-and-drink-menu' ), $selected ),
+				'cost' => null,
+			);
+			continue;
+		}
+		$options[] = array(
+			'id'   => (string) $selected,
+			'name' => isset( $definitions[ $selected ]['name'] ) ? $definitions[ $selected ]['name'] : '',
+			'cost' => isset( $definitions[ $selected ]['cost'] ) ? $definitions[ $selected ]['cost'] : 0,
+		);
+	}
+	return $options;
+}
+
+/**
+ * Build immutable order-time custom-field display data from validated values.
+ */
+function fdm_create_order_custom_field_snapshots( $values ) {
+	global $fdm_controller;
+	$values = is_array( $values ) ? $values : array();
+	$snapshots = array();
+	foreach ( $fdm_controller->settings->get_ordering_custom_fields() as $field ) {
+		if ( empty( $field->slug ) || ! array_key_exists( $field->slug, $values ) ) continue;
+		$snapshots[] = array(
+			'key'    => (string) $field->slug,
+			'slug'   => (string) $field->slug,
+			'label'  => isset( $field->name ) ? sanitize_text_field( $field->name ) : sanitize_text_field( $field->slug ),
+			'type'   => isset( $field->type ) ? sanitize_key( $field->type ) : 'text',
+			'values' => isset( $field->values ) ? sanitize_text_field( $field->values ) : '',
+			'value'  => $values[ $field->slug ],
+		);
+	}
+	return apply_filters( 'fdm_order_custom_field_snapshots', $snapshots, $values );
+}
+
+/**
+ * Read custom fields consistently. Legacy fallbacks never rewrite an order.
+ */
+function fdm_get_order_custom_field_snapshots( $order ) {
+	global $fdm_controller;
+	if ( ! empty( $order->custom_field_snapshots ) && is_array( $order->custom_field_snapshots ) ) return $order->custom_field_snapshots;
+
+	$values = isset( $order->custom_fields ) && is_array( $order->custom_fields ) ? $order->custom_fields : array();
+	$entries = array();
+	$known = array();
+	foreach ( $fdm_controller->settings->get_ordering_custom_fields() as $field ) {
+		if ( empty( $field->slug ) || ! array_key_exists( $field->slug, $values ) ) continue;
+		$known[] = (string) $field->slug;
+		$entries[] = array(
+			'key' => (string) $field->slug, 'slug' => (string) $field->slug,
+			'label' => isset( $field->name ) ? (string) $field->name : (string) $field->slug,
+			'type' => isset( $field->type ) ? (string) $field->type : 'text',
+			'values' => isset( $field->values ) ? (string) $field->values : '', 'value' => $values[ $field->slug ],
+		);
+	}
+	foreach ( $values as $slug => $value ) {
+		if ( in_array( (string) $slug, $known, true ) ) continue;
+		$entries[] = array(
+			'key' => (string) $slug, 'slug' => (string) $slug,
+			/* translators: %s: legacy custom-field slug. */
+			'label' => sprintf( __( 'Legacy field data unavailable (%s)', 'food-and-drink-menu' ), $slug ),
+			'type' => 'text', 'values' => '', 'value' => $value,
+		);
+	}
+	return $entries;
 }

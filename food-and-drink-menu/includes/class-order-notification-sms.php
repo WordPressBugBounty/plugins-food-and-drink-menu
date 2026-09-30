@@ -114,23 +114,27 @@ class fdmOrderNotificationSMS extends fdmOrderNotification {
 	public function send_notification() {
 		global $fdm_controller;
 
-		$url = add_query_arg(
+		$endpoint = apply_filters( 'fdm_sms_service_endpoint', 'https://www.fivestarplugins.com/sms-handling/v2/fdm-send.php' );
+		$response = wp_remote_post(
+			$endpoint,
 			array(
-				'license_key' 	=> urlencode( $this->license_key ),
-				'admin_email' 	=> urlencode( $this->purchase_email ),
-				'plugin'		=> urlencode( 'fdm' ),
-				'phone_number' 	=> urlencode( $this->phone_number ),
-				'message'		=> urlencode( $this->message ),
-				'country_code'	=> urlencode( $fdm_controller->settings->get_setting( 'fdm-country-code' ) )
-			),
-			'http://www.fivestarplugins.com/sms-handling/sms-client.php'
+				'timeout' => 10,
+				'body'    => array(
+					'api_version'  => 2,
+					'license_key'  => $this->license_key,
+					'admin_email'  => $this->purchase_email,
+					'plugin'       => 'fdm',
+					'phone_number' => $this->phone_number,
+					'message'      => $this->message,
+					'country_code' => $fdm_controller->settings->get_setting( 'fdm-country-code' ),
+				),
+			)
 		);
 
-		$opts = array( 'http' => array( 'method' => "GET" ) );
-		$context = stream_context_create($opts);
-		$return = json_decode( file_get_contents( $url, false, $context ) );
-
-		$return->success = isset( $return->success ) ? $return->success : false;
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) return false;
+		$return = json_decode( wp_remote_retrieve_body( $response ) );
+		if ( ! is_object( $return ) || 2 !== (int) ( isset( $return->api_version ) ? $return->api_version : 0 ) ) return false;
+		$return->success = ! empty( $return->success );
 
 		if ( $return->success ) {
 

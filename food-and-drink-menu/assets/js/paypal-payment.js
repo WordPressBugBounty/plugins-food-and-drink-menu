@@ -17,7 +17,7 @@ jQuery(document).ready(function($) {
 		var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
 		var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
 		var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
-		var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+		var delivery = jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup';
 
 		var custom_fields = {};
 		jQuery( '.fdm-ordering-custom-fields' ).find( 'input, textarea, select' ).each( function() {
@@ -40,7 +40,6 @@ jQuery(document).ready(function($) {
 			tip_amount: tip_amount,
 			discount_code: discount_code,
 			custom_fields: custom_fields,
-			post_status: 'draft',
 			nonce: fdm_paypal_payment.nonce,
 			action: 'fdm_submit_order'
 		});
@@ -54,6 +53,8 @@ jQuery(document).ready(function($) {
 			}
 
 			form$.append("<input type='hidden' name='custom' value='order_id=" + response.data.order_id + "'/>");
+			form$.find( '#fdm-ordering-sidescreen-paypal-total' ).val( response.data.order_total );
+			form$.find( 'input[name="currency_code"]' ).val( response.data.currency );
 
 			// submit form
 			form$.get(0).submit();

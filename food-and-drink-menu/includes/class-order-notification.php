@@ -151,10 +151,7 @@ abstract class fdmOrderNotification {
 
 				$counter++;
 
-				$ordering_options = get_post_meta( $order_item->id, '_fdm_ordering_options', true );
-				$ordering_options = is_array( $ordering_options ) ? $ordering_options :  array();
-
-				$selected_options = is_array( $order_item->selected_options ) ? $order_item->selected_options : array();
+				$selected_options = fdm_get_order_item_option_snapshots( $order_item );
 
 				$item_price = fdm_calculate_admin_price( $order_item );
 
@@ -164,11 +161,13 @@ abstract class fdmOrderNotification {
 
 					<td><?php echo esc_html( $counter ); ?></td>
 			
-					<td><?php echo esc_html( get_the_title( $order_item->id ) ); ?> (<?php echo esc_html( $order_item->id );?>)</td>
+					<td><?php echo esc_html( fdm_get_order_item_title( $order_item ) ); ?> (<?php echo esc_html( $order_item->id );?>)</td>
 
 					<td>
 						<?php foreach ( $selected_options as $selected_option ) {
-							$ordering_options[ $selected_option ]['name'];
+							echo esc_html( $selected_option['name'] );
+							if ( isset( $selected_option['cost'] ) && is_numeric( $selected_option['cost'] ) ) echo ' (' . esc_html( fdm_format_price( $selected_option['cost'] ) ) . ')';
+							echo '<br />';
 						} ?>
 					</td>
 
@@ -207,13 +206,12 @@ abstract class fdmOrderNotification {
 		
 		$custom_fields_HTML = '';
 
-		$custom_fields = $fdm_controller->settings->get_ordering_custom_fields();
+		$custom_fields = fdm_get_order_custom_field_snapshots( $this->order );
 
 		foreach ( $custom_fields as $custom_field ) {
-
-			if ( empty( $this->order->custom_fields[ $custom_field->slug ] ) ) { continue; }
-
-			$custom_fields_HTML .= $custom_field->name . ': ' . ( is_array( $this->order->custom_fields[ $custom_field->slug ] ) ? implode( ',', $this->order->custom_fields[ $custom_field->slug ] ) : esc_html( $this->order->custom_fields[ $custom_field->slug ] ) ) . "\n";
+			$value = isset( $custom_field['value'] ) ? $custom_field['value'] : '';
+			if ( '' === $value || false === $value || array() === $value ) continue;
+			$custom_fields_HTML .= $custom_field['label'] . ': ' . ( is_array( $value ) ? implode( ',', $value ) : esc_html( $value ) ) . "\n";
 		}
 
 		return $custom_fields_HTML;

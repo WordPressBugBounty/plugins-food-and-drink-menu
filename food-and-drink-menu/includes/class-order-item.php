@@ -80,12 +80,17 @@ class fdmOrderItem {
 
 	// The custom fields associated with this order
 	public $custom_fields = array();
+	public $custom_field_snapshots = array();
 
 	// Stripe payment properties
 	public $stripe_payment_intent_id;
 	public $stripe_payment_hold_status;
 	public $stripe_customer_id;
 	public $edit_confirmation_code;
+	public $pricing_version;
+	public $order_currency;
+	public $pricing_snapshot_version;
+	public $currency;
 
 	// Stores any errors found during the validation process
 	public $validation_errors = array();
@@ -102,7 +107,7 @@ class fdmOrderItem {
 			$post = get_post( $post );
 		}
 
-		if ( get_class( $post ) == 'WP_Post' && $post->post_type == FDM_ORDER_POST_TYPE ) {
+		if ( $post instanceof WP_Post && FDM_ORDER_POST_TYPE === $post->post_type ) {
 			$this->load_wp_post( $post );
 			return true;
 		}
@@ -146,7 +151,12 @@ class fdmOrderItem {
 			'discount_amount' => 0,
 			'estimated_time' => '24:00',
 			'permalink' => get_site_url(),
-			'custom_fields' => array()
+			'custom_fields'   => array(),
+			'custom_field_snapshots' => array(),
+			'pricing_version' => 0,
+			'order_currency'  => '',
+			'pricing_snapshot_version' => 0,
+			'currency' => '',
 		);
 
 		$meta_defaults = apply_filters( 'fdm_order_metadata_defaults', $meta_defaults );
@@ -175,6 +185,11 @@ class fdmOrderItem {
 		$this->discount_amount = $meta['discount_amount'];
 		$this->estimated_time = $meta['estimated_time'];
 		$this->custom_fields = $meta['custom_fields'];
+		$this->custom_field_snapshots = is_array( $meta['custom_field_snapshots'] ) ? $meta['custom_field_snapshots'] : array();
+		$this->pricing_version = $meta['pricing_version'] ?: $meta['pricing_snapshot_version'];
+		$this->order_currency = $meta['order_currency'] ?: $meta['currency'];
+		$this->pricing_snapshot_version = $meta['pricing_snapshot_version'] ?: $this->pricing_version;
+		$this->currency = $meta['currency'] ?: $this->order_currency;
 	}
 
 	public function update( $args ) {
@@ -208,7 +223,7 @@ class fdmOrderItem {
 
 			$this->save_order_post_meta();
 
-			wp_update_post( $post );
+			return wp_update_post( $post, true );
 		}
 		// If new order, insert order as draft, save post meta, then update status
 		// it is done this way, because we send notifications on post_status
@@ -217,7 +232,11 @@ class fdmOrderItem {
 
 			$post['post_status'] = 'draft';
 
-			$post_id = wp_insert_post( $post );
+			$post_id = wp_insert_post( $post, true );
+
+			if ( is_wp_error( $post_id ) ) {
+				return $post_id;
+			}
 
 			if ( $post_id ) { 
 				
@@ -231,7 +250,7 @@ class fdmOrderItem {
 				'post_status' => $this->post_status
 			);
 
-			wp_update_post( $args );
+			return wp_update_post( $args, true );
 		}
 	}
 
@@ -255,7 +274,12 @@ class fdmOrderItem {
 			'tip_amount'      => $this->tip_amount,
 			'discount_amount' => $this->discount_amount,
 			'estimated_time'  => $this->estimated_time,
-			'custom_fields'	  => $this->custom_fields
+			'custom_fields'	  => $this->custom_fields,
+			'custom_field_snapshots' => is_array( $this->custom_field_snapshots ) ? $this->custom_field_snapshots : array(),
+			'pricing_version' => isset( $this->pricing_version ) ? (int) $this->pricing_version : 0,
+			'order_currency'  => isset( $this->order_currency ) ? strtoupper( sanitize_text_field( $this->order_currency ) ) : '',
+			'pricing_snapshot_version' => isset( $this->pricing_snapshot_version ) ? (int) $this->pricing_snapshot_version : ( isset( $this->pricing_version ) ? (int) $this->pricing_version : 0 ),
+			'currency' => isset( $this->currency ) && $this->currency ? strtoupper( sanitize_text_field( $this->currency ) ) : ( isset( $this->order_currency ) ? strtoupper( sanitize_text_field( $this->order_currency ) ) : '' ),
 		);
 
 		$postmeta = apply_filters( 'fdm_insert_order_metadata', $postmeta, $this );
@@ -321,13 +345,23 @@ class fdmOrderItem {
 		$this->discount_amount = empty( $_POST['fdm_discount_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_discount_amount'] ) );
 		$this->tip_amount = empty( $_POST['fdm_tip_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_tip_amount'] ) );
 		
-		$custom_fields = $fdm_controller->settings->get_ordering_custom_fields();
+		$custom_fields = fdm_get_order_custom_field_snapshots( $this );
 
 		foreach ( $custom_fields as $custom_field ) {
+			$custom_field = (object) $custom_field;
 
-			if ( $custom_field->type == 'checkbox' ) { $this->custom_fields[ $custom_field->slug ] = ( empty( $_POST[ $custom_field->slug ] ) or ! is_array( $_POST[ $custom_field->slug ] ) ) ? '' : sanitize_text_field( implode( ',', $_POST[ $custom_field->slug ] ) ); }
+			if ( $custom_field->type == 'checkbox' ) { $this->custom_fields[ $custom_field->slug ] = ( empty( $_POST[ $custom_field->slug ] ) or ! is_array( $_POST[ $custom_field->slug ] ) ) ? array() : array_map( 'sanitize_text_field', wp_unslash( $_POST[ $custom_field->slug ] ) ); }
 			elseif ( $custom_field->type == 'textarea' ) { $this->custom_fields[ $custom_field->slug ] = empty( $_POST[ $custom_field->slug ] ) ? false : sanitize_textarea_field( $_POST[ $custom_field->slug ] ); }
 			else { $this->custom_fields[ $custom_field->slug ] = empty( $_POST[ $custom_field->slug ] ) ? false : sanitize_text_field( $_POST[ $custom_field->slug ] ); }
+		}
+
+		if ( ! empty( $this->custom_field_snapshots ) ) {
+			foreach ( $this->custom_field_snapshots as &$snapshot ) {
+				if ( ! empty( $snapshot['slug'] ) && array_key_exists( $snapshot['slug'], $this->custom_fields ) ) {
+					$snapshot['value'] = $this->custom_fields[ $snapshot['slug'] ];
+				}
+			}
+			unset( $snapshot );
 		}
 	}
 
@@ -399,7 +433,7 @@ class fdmOrderItem {
 			$this->calculate_tax_amount();
 		}
 
-		$this->order_total = $this->subtotal - $this->discount_amount + $this->delivery_amount + $this->tax_amount + floatval( $this->tip_amount );
+		$this->order_total = round( max( 0, $this->subtotal - $this->discount_amount + $this->delivery_amount + $this->tax_amount + floatval( $this->tip_amount ) ), 2 );
 
 		return $this->order_total; 
 	}
@@ -426,6 +460,7 @@ class fdmOrderItem {
 	public function maybe_apply_discount_code() {
 		global $fdm_controller;
 		
+		$this->discount_amount = 0;
 		if ( empty( $this->discount_code ) ) { return; }
 
 		$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
@@ -436,11 +471,12 @@ class fdmOrderItem {
 
 			if ( ! $discount->enabled ) { continue; }
 
-			if ( ! $discount->minimum < $this->subtotal )  { continue; }
+			if ( (float) $discount->minimum > (float) $this->subtotal )  { continue; }
 
 			if ( ( ! empty( $discount->start_datetime ) and strtotime( $discount->start_datetime ) > time() ) or ( ! empty( $discount->end_datetime ) and strtotime( $discount->end_datetime ) < time() ) ) { continue; }
 
-			$this->discount_amount = $discount->type == 'amount' ? max( $discount->amount, 0 ) : $this->subtotal * max( min( $discount->amount, 100 ), 0 ) / 100;
+			$this->discount_amount = round( $discount->type == 'amount' ? max( min( (float) $discount->amount, $this->subtotal ), 0 ) : $this->subtotal * max( min( (float) $discount->amount, 100 ), 0 ) / 100, 2 );
+			return;
 		}
 	}
 
@@ -451,6 +487,7 @@ class fdmOrderItem {
 	public function maybe_add_delivery_fee() {
 		global $fdm_controller;
 
+		$this->delivery_amount = 0;
 		if ( $this->delivery and ! empty( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ) {
 
 			$this->delivery_amount = floatval( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) );
@@ -468,7 +505,7 @@ class fdmOrderItem {
 
 		$taxable_amount = $this->subtotal - $this->discount_amount + $this->delivery_amount;
 
-		$this->tax_amount = apply_filters( 'fdm_taxable_amount', $taxable_amount, $this->subtotal, $this->discount_amount, $this->delivery_amount, $this->tip_amount ) * $tax_rate;
+		$this->tax_amount = round( max( 0, apply_filters( 'fdm_taxable_amount', $taxable_amount, $this->subtotal, $this->discount_amount, $this->delivery_amount, $this->tip_amount ) * $tax_rate ), 2 );
 	}
 
 	/**

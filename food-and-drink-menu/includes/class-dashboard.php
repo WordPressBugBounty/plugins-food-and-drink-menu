@@ -170,9 +170,9 @@ class fdmDashboard {
 				<table class='fdm-overview-table wp-list-table widefat fixed striped posts'>
 					<thead>
 						<tr>
-							<th><?php _e("Title", 'EWD_ABCO'); ?></th>
-							<th><?php _e("Sections", 'EWD_ABCO'); ?></th>
-							<th><?php _e("Date", 'EWD_ABCO'); ?></th>
+							<th><?php esc_html_e( 'Title', 'food-and-drink-menu' ); ?></th>
+							<th><?php esc_html_e( 'Sections', 'food-and-drink-menu' ); ?></th>
+							<th><?php esc_html_e( 'Date', 'food-and-drink-menu' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -200,8 +200,8 @@ class fdmDashboard {
 															<?php $term = $this->get_term_from_array($terms, $id); ?>
 															<?php if ( !empty( $term ) ) : ?>
 																<a href="<?php echo esc_url( admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $id . '&post_type=' . FDM_MENUITEM_POST_TYPE ) ); ?>">
-																	<span class="fdm-term-count"><?php esc_html_e( $term->count ); ?></span>
-																	<?php echo $term->name; ?>
+																	<span class="fdm-term-count"><?php echo esc_html( $term->count ); ?></span>
+																	<?php echo esc_html( $term->name ); ?>
 																</a>
 															<?php endif; ?>
 														<?php endforeach; ?>
@@ -211,8 +211,8 @@ class fdmDashboard {
 															<?php $term = $this->get_term_from_array($terms, $id); ?>
 															<?php if ( !empty( $term ) ) : ?>
 																<a href="<?php echo esc_url( admin_url( 'edit-tags.php?action=edit&taxonomy=fdm-menu-section&tag_ID=' . $id . '&post_type=' . FDM_MENUITEM_POST_TYPE ) ); ?>">
-																	<span class="fdm-term-count"><?php esc_html_e( $term->count ); ?></span>
-																	<?php echo $term->name; ?>
+																	<span class="fdm-term-count"><?php echo esc_html( $term->count ); ?></span>
+																	<?php echo esc_html( $term->name ); ?>
 																</a>
 															<?php endif; ?>
 														<?php endforeach; ?>

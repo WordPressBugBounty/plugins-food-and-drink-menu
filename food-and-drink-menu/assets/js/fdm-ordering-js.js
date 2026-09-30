@@ -139,7 +139,7 @@ jQuery(document).ready(function() {
 		var phone = jQuery( 'input[name="fdm_ordering_phone"]' ).val();
 		var note = jQuery( 'textarea[name="fdm_ordering_note"]' ).val();
 		var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
-		var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+		var delivery = jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup';
 		var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
 		var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
 
@@ -421,9 +421,21 @@ function fdm_add_to_cart( post_id ) {
 
 	jQuery( '#fdm-ordering-popup-note textarea' ).val( '' );
 	
-	var data = 'post_id=' + post_id + '&item_identifier=' + item_identifier + '&selected_options=' + selected_options + '&selected_price=' + selected_price + '&note=' + note + '&nonce=' + fdm_ordering_popup_data.nonce + '&action=fdm_add_to_cart';
+	var data = {
+		post_id: post_id,
+		item_identifier: item_identifier,
+		selected_options: selected_options.join( ',' ),
+		selected_price: selected_price,
+		note: note,
+		nonce: fdm_ordering_popup_data.nonce,
+		action: 'fdm_add_to_cart'
+	};
 	jQuery.post( ajaxurl, data, function( response ) {
 		if ( ! response ) { return; }
+		if ( 'object' === typeof response && false === response.success ) {
+			jQuery( '#fdm-ordering-sidescreen-items' ).append( '<p class="fdm-message">' + jQuery( '<div>' ).text( response.data.msg ).html() + '</p>' );
+			return;
+		}
  
 		jQuery( '#fdm-ordering-sidescreen-items' ).append( response ); 
 
@@ -477,6 +489,10 @@ function fdm_admin_add_to_cart( post_id ) {
 
 	jQuery.post( ajaxurl, data, function( response ) {
 		if ( ! response ) { return; }
+		if ( 'object' === typeof response && false === response.success ) {
+			jQuery( '.fdm-admin-add-item-to-order-items-table' ).before( '<p class="fdm-message">' + jQuery( '<div>' ).text( response.data.msg ).html() + '</p>' );
+			return;
+		}
  
 		jQuery( response ).insertBefore( '.fdm-admin-order-items-table tbody tr:last' ); 
 	});
@@ -657,7 +673,7 @@ function fdm_validate_ordering_fields() {
 	}
 
 	// make sure the delivery minimum is met
-	let delivery =  ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+	let delivery = ( jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup' ) === 'delivery';
 
 	if ( delivery && fdm_ordering_data.delivery_minimum && parseFloat( jQuery( '#fdm-ordering-sidescreen-total-value' ).html() ) < fdm_ordering_data.delivery_minimum ) {
 

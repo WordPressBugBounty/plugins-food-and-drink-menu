@@ -3,17 +3,17 @@ Contributors: rustaurius
 Donate Link: https://www.etoilewebdesign.com/plugin-donations/
 Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
-Tested Up To: 7.0
+Tested Up To: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.4
-License: GPLv3
-License URI: https://www.gnu.org/licenses/gpl-3.0.html
+Stable tag: 2.6.0
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
 
 == Description ==
 
-Create a stylish, responsive restaurant menu and add it to your site in minutes. With the easy-to-use builder and the included layout and customization options, you'll have it set up in no time.
+Create a stylish, responsive restaurant menu and add it to your site in minutes. The menu builder makes it easy to create and organize menu items and sections, choose a layout, reorder items and publish your menu using blocks or shortcodes.
 
 This restaurant plugin can also be used to enable a food ordering system directly on your site, and you can manage the orders from our associated Five Star Restaurant Manager mobile app. This is available in the ultimate version, which you can read about in the **Food Ordering** section below.
 
@@ -24,6 +24,7 @@ This restaurant plugin can also be used to enable a food ordering system directl
 ### Key Features
 
 - Unlimited restaurant menus and menu items.
+- Choose from multiple responsive menu styles.
 - Responsive layout, so your restaurant menu looks great on mobile and all devices.
 - Add your restaurant menu to any page via the included **Gutenberg blocks and shortcodes**.
 - Add a menu directly into any of your restaurant site's block theme templates via the included **patterns**.
@@ -31,6 +32,9 @@ This restaurant plugin can also be used to enable a food ordering system directl
 - Optional sidebar to display your restaurant menu sections, for quick navigation.
 - Full restaurant menu schema structured data automatically integrated, so Google can correctly identify your page as a menu and use it accordingly in search results.
 - Create a QR code that you can use in restaurant to let your guests see your online menu.
+- Let visitors filter menu items by category.
+- Let visitors sort menu items by item name.
+- Organize and reorder menu items through the menu management interface.
 
 ***Five Star Restaurant Menu** is very user friendly and comes with a walk-through that runs automatically when you activate the plugin and will help you create your first menu items, add the menu to your site and set key options!*
 
@@ -88,26 +92,24 @@ Several additional features are included that will help ensure you're able to se
 
 ### Premium Restaurant Menu
 
-With the premium version of the plugin, you can extend the functionality of your restaurant menu to offer your guests the best possible experience. This includes multiple layout options, the ability to add custom fields to your menu items, sorting and filtering options, and much more.
+With the premium version of the plugin, you can extend the functionality of your restaurant menu to offer your guests the best possible experience. This includes multiple layout options, the ability to add custom fields to your menu items, search/sorting/filtering options, promotional features, advanced customization and much more.
 
 Premium features include:
 
 - Additional responsive restaurant menu styles/layouts, including:
-- The **Refined** style, which displays your restaurant menu in an elegant layout, without images, like you may find in an upscale restaurant.
-- The **Image** style: Perfect for showcasing all the great photos you have of your restaurant menu items.
 - The **Ordering** style: Designed and adapted for use specifically with the ordering features available in the ultimate version, this layout makes browsing, adding to cart and checking out a breeze.
-- The **Luxe** style: A variation on the Refined style, this minimalist layout gives a luxury feel to your restaurant menu and fits in any theme.
+- The **Luxe** style: This minimalist layout gives a luxury feel to your restaurant menu and fits in any theme.
 - Custom fields to add any extra info you want to your restaurant menu items.
-- Sorting, filtering and search options to let your customers find the exact meal or item they're looking for.
+- Advanced sorting, filtering and search options to let your customers find the exact meal or item they're looking for.
 - Icons to indicate dietary and ethical requirements, including organic, gluten-free, kosher, halal and many more.
 - Badges for item features, specials and sales.
-- Special/discount pricing.
+- Advanced discount and promotional pricing features beyond basic Sale pricing.
 - Google maps to show off local suppliers or ethical sourcing programs.
 - Add a related items section to the single menu item page.
 - Labelling options that let you change the wording for all the labels displayed on the front end of the plugin.
 - Advanced styling options to change the fonts, colors, widths, borders, etc. of the different restaurant menu elements on your restaurant site. 
 
-By combining the sorting/filtering/search options with the badges, dietary icons and specials, you can be sure that your guests will be able to locate the best possible menu items for them in no time at all. 
+By combining the advanced search and filtering options with item attributes, badges and promotional features, you can help guests find the menu items that best match what they are looking for.
 
 [youtube https://www.youtube.com/watch?v=2NCgp67M_k4]
 
@@ -167,7 +169,7 @@ With these features, you can set the app up on a tablet in the restaurant kitche
 
 For further information and purchasing options, please visit our [WordPress restaurant menu](https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/) homepage.
 
-*We are also pleased to offer a free 7-day trial of either the premium version or the ultimate version of the plugin, which you can use to test out features like the ordering system, additional layouts, custom fields and filtering options before buying!*
+*We are also pleased to offer a free 7-day trial of either the premium version or the ultimate version of the plugin, which you can use to test advanced styling, search and filtering, custom fields, promotional features and the food ordering system before buying.*
 
 This plugin is one part of our suite designed to give you the best WordPress restaurant experience. Check out the powerful [Restaurant Reservations](https://wordpress.org/plugins/restaurant-reservations/) plugin and let your customers reserve a table directly on your site. With its intuitive and easy-to-use interface, you'll be sure to not lose out on business to your competitors.
 
@@ -240,11 +242,9 @@ You can either make use of the included 'Menu' Gutenberg block or the [fdm-menu 
 
 You definitely can. Right underneath where you add the main price, you can click the 'Add Price' button and input the new price for your variation.
 
-= How do I change the order of items on my menu? =
+= How do I change the order of items in my menu? =
 
-When editing a Menu Item, you’ll see a panel on the right-hand side which has an Order input field. Menu Items are listed in order of this value, from lowest to highest.
-
-If you want one Menu Item to be listed after another, make sure it’s Order value is higher.
+You can reorder menu items directly from the menu edit screen. Drag and drop to arrange the items in the order you want them to appear and save your changes. The new order will be preserved when you reload or update the menu.
 
 = How can I show that a collection of dishes come with a side? =
 
@@ -268,7 +268,7 @@ You can then override these names when adding the section to a menu. To do this,
 
 = Can I customize the look and layout of my menu? =
 
-The plugin comes with a base style, which inherits the look of your theme, as well as a classic style. There are also two extra premium styles available.
+The free plugin includes multiple menu layouts, including the Base, Classic, Refined and Image styles. Premium adds further layout and advanced styling options.
 
 Since version 1.5 of this plugin, you can also make use of your theme’s [page templates](https://doc.fivestarplugins.com/plugins/food-and-drink-menu/user/advanced/page-templates).
 
@@ -302,37 +302,27 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 
 == Changelog ==
 
-= 2.5.4 (2026-07-30) =
-- Fixed a few admin styling issues.
-- Fixed a few deprecated notices.
-- Added a direct support option to the deactivation survey, making it easier to get help right away if you're uninstalling due to an issue.
-
-= 2.5.3 (2026-06-03) =
-- Releasing the validated fix for a Patchstack reported vulnerability.
-
-= 2.5.2 (2026-05-18) =
-- Fix for ordering scheduler sometimes not saving or displaying correctly.
-- Fixed deprecated notices/code.
-- Compatibility updates for WordPress 7.0.
-
-= 2.5.1 (2026-04-22) =
-- Added a lot of in-admin help content, including guidance, support, links to applicable documentation and an AI assistant. It works via the AI Admin Assistance plugin (https://wordpress.org/plugins/ait-ai-admin-assistance/).
-
-= 2.5.0 (2026-01-08) =
-- **IMPORTANT NOTE: Significant updates have been made to the default "Classic Style" menu style and to the "Image Style" menu style. If you are using either of these menu styles, we highly recommend that you install the update on a staging environment first and test with with the updated style, especially if you have customized the layout and/or CSS.**
-- Refresh of the "Classic Style" menu style.
-- Refresh of the "Image Style" menu style.
-- Refresh of the side ordering cart design.
-- Refresh of the menu item lightbox design.
-- Redesign of the plugin admin.
-- Added: You can now create discount codes that can be used when placing orders.
-- Added: New option to let visitors add a tip amount to their order.
-- Added: New order time option to let visitors select when their order should be prepared for.
-- Added: New option to let visitors select whether or not an order is for delivery, with secondary options to specify a delivery fee and a minimum order amount for delivery.
-- Added: The admin can now specify an ETA for pickup or delivery orders.
-- Added: "Add to Cart" button now also displays in the lightbox.
-- Added: You can now export orders.
-- Changed: Order payment amount is now broken down into its portions (subtotal, tax, tip, delivery, total), so that it's easier to understand what is being paid for.
-- Changed: Reorganized several ordering settings/options.
+= 2.6.0 (2026-09-30) =
+- **IMPORTANT NOTE: This is a major update with several big changes. We suggest testing this update in a staging or development environment before updating your live environment. Or wait a few days before updating in the event that an issue is identified that requires a fix/new update.**
+- Added an improved menu setup and management workflow to make it easier to create, organize, publish and maintain restaurant menus.
+- Added a more direct menu item reordering workflow.
+- Added structured restaurant item attributes for clearer dietary, allergen and other item information.
+- Updates to the Refined and Image menu styles.
+- Updates to available sale pricing features.
+- Updates to available menu filtering and sorting options.
+- Improved menu styling and presentation options, with additional attention to responsive layouts and upgrade compatibility.
+- Improved structured menu data for more consistent menu, section, item, pricing and attribute information.
+- Improved historical order data so order details can remain meaningful when menu items or options are later changed.
+- Improved compatibility and version handling between the free plugin and Premium Helper.
+- Improved the security and reliability of order pricing, payment validation, imports, exports, API access and external-service communication.
+- Improved performance and scalability for large menus, stored orders and API/order data.
+- Fixed issues with legacy notification migration.
+- Fixed several reliability issues in order exports.
 
 [See changelog for all versions](https://www.fivestarplugins.com/changelogs/food-and-drink-menu.txt).
+
+== Upgrade Notice ==
+
+= 2.6.0 =
+This is a major update that includes changes to menu creation and organization, menu styles, Free/Premium feature availability, structured item data, ordering reliability and Premium Helper integration.
+Existing menu content and saved settings are intended to remain compatible. If your site uses the Premium Helper, food ordering, custom CSS, template overrides, advanced filtering or extensive menu customizations, we recommend testing the update on a staging site before updating your production site.

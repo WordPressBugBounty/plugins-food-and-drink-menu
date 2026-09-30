@@ -67,6 +67,11 @@ class fdmViewMenu extends fdmView {
 	 */
 	public $max_price = 0;
 
+	/**
+	 * Unique identity for one rendered occurrence of this menu.
+	 */
+	public $render_instance_id = '';
+
 	// counters
 	public $columns = 0;
 	public $sections = 0;
@@ -102,12 +107,18 @@ class fdmViewMenu extends fdmView {
 	public function get_groups() {
 
 		$cols = array( 'one', 'two' );
+		$column_sections = array();
+		$all_section_ids = array();
+		foreach ( $cols as $key => $col_num ) {
+			$ids = array_values( array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $this->id, 'fdm_menu_column_' . $col_num, true ) ) ) ) );
+			$column_sections[ $key ] = $ids;
+			$all_section_ids = array_merge( $all_section_ids, $ids );
+		}
+		$grouped_items = fdmViewSection::fetch_item_posts( array_values( array_unique( $all_section_ids ) ) );
 
 		foreach ( $cols as $key => $col_num ) {
 
-			$col = get_post_meta( $this->id, 'fdm_menu_column_' . $col_num, true );
-
-			if ( trim( $col ) == '' ) {
+			if ( empty( $column_sections[ $key ] ) ) {
 
 				continue;
 			} 
@@ -115,14 +126,13 @@ class fdmViewMenu extends fdmView {
 
 				$this->groups[ $key ] = array();
 
-				$section_ids = array_filter( explode( ",", $col ) );
-
-				foreach ( $section_ids as $section_id ) {
+				foreach ( $column_sections[ $key ] as $section_id ) {
 
 					$section = new fdmViewSection(
 						array(
 							'id' => $section_id,
 							'menu' => $this,
+							'item_posts' => isset( $grouped_items[ $section_id ] ) ? $grouped_items[ $section_id ] : array(),
 						)
 					);
 
@@ -160,6 +170,8 @@ class fdmViewMenu extends fdmView {
 		// Add any dependent stylesheets or javascript
 		$this->enqueue_assets();
 
+		$this->render_instance_id = fdm_global_unique_id();
+
 		// Add css classes to the menu list
 		$this->classes = $this->menu_classes();
 
@@ -170,7 +182,10 @@ class fdmViewMenu extends fdmView {
 		$template = $this->find_template( 'menu' );
 		
 		if ( $template ) {
+			// Own the instance boundary here so existing theme templates inherit it too.
+			echo '<div class="fdm-menu-instance" data-fdm-instance="' . esc_attr( $this->render_instance_id ) . '">';
 			include( $template );
+			echo '</div>';
 		}
 		$output = ob_get_clean();
 
@@ -270,63 +285,7 @@ class fdmViewMenu extends fdmView {
 		global $fdm_controller;
 
 		if ( ! empty( $fdm_controller->settings->get_setting( 'fdm-disable-microdata' ) ) ) { return; }
-
-		$menu_schema = array(
-			'@context' 			=> 'https://schema.org',
-			'@type' 			=> 'Menu',
-			'name'				=> $this->post->post_title,
-			'hasMenuSection' 	=> array()
-		);
-
-		foreach ( $this->groups as $group ) {
-
-			foreach ( $group as $section ) {
-				
-				if ( ! isset( $section->items ) or ! is_array( $section->items ) ) { continue; }
-				
-				$menu_section_schema = array(
-					'@type'			=> 'MenuSection',
-					'name'			=> $section->title,
-					'description'	=> $this->clean_schema_description( $section->description ),
-					'hasMenuItem'	=> array(),
-				);
-
-				if ( ! empty( $section->image_url ) ) {
-
-					$menu_section_schema['image'] = $section->image_url;
-				}
-	
-				foreach ( $section->items as $item ) {
-	
-					$menu_item_schema = array(
-			    		'@type' 			=> 'MenuItem',
-			    		'name' 				=> $item->title,
-			    		'description'		=> $this->clean_schema_description( $item->content ),
-			    		'offers' 			=> array()
-			    	);
-
-			    	if ( ! empty( $item->image ) ) {
-
-			    		$menu_item_schema['image'] = $item->image;
-			    	}
-	
-			    	foreach ( $item->prices as $price ) {
-	
-			    		$menu_item_schema['offers'][] = array(
-			    			'@type' 			=> 'Offer',
-			    			'price' 			=> preg_replace('/[^0-9.,]/', '', $price),
-			    			'priceCurrency'		=> $fdm_controller->settings->get_setting( 'ordering-currency' )
-			    		);
-			    	}
-	
-			    	$menu_section_schema['hasMenuItem'][] = $menu_item_schema; 
-			    }
-				
-				$menu_schema['hasMenuSection'][] = $menu_section_schema;
-			}
-		}
-
-		$fdm_controller->schema_menu_data[] = $menu_schema;
+		$fdm_controller->schema_menu_data[] = $fdm_controller->structured_data->get_menu_schema_from_view( $this );
 	}
 
 	private function clean_schema_description( $content ) {
@@ -365,6 +324,16 @@ class fdmViewMenu extends fdmView {
 	 */
 	public function menu_classes( $classes = array() ) {
 		global $fdm_controller;
+		$style_classes = array();
+		if ( $fdm_controller->permissions->check_permission( 'styling' ) ) {
+			$style_classes = array(
+				'fdm-spacing-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-item-spacing' ) ?: 'current' ),
+				'fdm-price-position-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-price-position' ) ?: 'current' ),
+				'fdm-image-ratio-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-image-aspect-ratio' ) ?: 'current' ),
+				'fdm-image-fit-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-image-fit' ) ?: 'cover' ),
+				'fdm-attribute-position-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-attribute-position' ) ?: 'current' ),
+			);
+		}
 
 		$classes = array_merge(
 			$classes,
@@ -376,7 +345,8 @@ class fdmViewMenu extends fdmView {
 				'fdm-columns-' . count( $this->groups ),
 				'fdm-layout-' . esc_attr( $this->layout ),
 				'clearfix',
-			)
+			),
+			$style_classes
 		);
 
 		return apply_filters( 'fdm_menu_classes', $classes, $this );

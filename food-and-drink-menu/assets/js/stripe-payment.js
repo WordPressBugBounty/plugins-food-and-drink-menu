@@ -38,7 +38,7 @@ jQuery(document).ready(function($) {
 			var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
 			var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
 			var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
-			var delivery = ( jQuery( '.fdm-order-delivery-toggle-option' ).length && jQuery( 'input[name="fdm-delivery-toggle"]' ).val() == 'delivery' ) ? true : false;
+			var delivery = jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup';
 	
 			var custom_fields = {};
 			jQuery( '.fdm-ordering-custom-fields' ).find( 'input, textarea, select' ).each( function() {
@@ -62,7 +62,6 @@ jQuery(document).ready(function($) {
 				discount_code: discount_code,
 				custom_fields: custom_fields,
 				nonce: fdm_stripe_payment.nonce,
-				post_status: 'draft',
 				action: 'fdm_submit_order'
 			});
 			
@@ -75,6 +74,15 @@ jQuery(document).ready(function($) {
 			}
 	
 			form$.append( "<input type='hidden' id='fdm-order-id' name='order_id' value='" + response.data.order_id + "'/>" );
+			if ( fdm_stripe_payment.stripe_sca && elements ) {
+				var serverAmount = response.data.currency.toLowerCase() === 'jpy'
+					? Math.round( Number( response.data.order_total ) )
+					: Math.round( Number( response.data.order_total ) * 100 );
+				elements.update({
+					amount: serverAmount,
+					currency: response.data.currency.toLowerCase()
+				});
+			}
 		}
 
 		// send the card details to Stripe
@@ -96,7 +104,6 @@ jQuery(document).ready(function($) {
 				'nonce': fdm_stripe_payment.nonce,
 				'action': 'fdm_stripe_get_intent',
 				'order_id': jQuery( '#fdm-order-id' ).val(),
-				'payment_amount': jQuery( '#fdm-ordering-sidescreen-stripe-total' ).val(),
 				'return_url': permalink,
 			};
 
@@ -138,7 +145,6 @@ jQuery(document).ready(function($) {
 							// The payment has been processed!
 							if (pi.status === 'succeeded' || pi.status === 'requires_capture') {
 							  params['success'] = true;
-							  params['payment_amount'] = pi.amount;
 							  params['payment_id'] = pi.id;
 							  // params['payment_intent'] = pi;
 							}
@@ -195,6 +201,7 @@ jQuery(document).ready(function($) {
 					var token = response['id'];
 					// insert the token into the form so it gets submitted to the server
 					form$.append( "<input type='hidden' name='stripeToken' value='" + token + "'/>" );
+					form$.append( "<input type='hidden' name='nonce' value='" + fdm_stripe_payment.nonce + "'/>" );
 			
 					form$.get(0).submit();
 				}

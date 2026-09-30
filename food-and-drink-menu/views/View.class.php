@@ -100,13 +100,14 @@ class fdmView extends fdmBase {
 	
 		// Discounted price
 		$discounts_permissions = $fdm_controller->permissions->check_permission( 'discounts' );
-		if (! $fdm_controller->settings->get_setting('fdm-disable-price') && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) && $discounts_permissions ) {
+		$explicit_sale = isset( $this->id ) && 'sale' === get_post_meta( $this->id, 'fdm_item_special', true );
+		if ( ! $fdm_controller->settings->get_setting('fdm-disable-price') && ( $explicit_sale || ( $discounts_permissions && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) ) ) {
 			$this->content_map['price'] = 'content/price-discount';
 		}
 	
 		// Specials
 		$specials_permissions = $fdm_controller->permissions->check_permission( 'specials' );
-		if ( ! $fdm_controller->settings->get_setting('fdm-disable-specials') && $specials_permissions) {
+		if ( $explicit_sale || ( ! $fdm_controller->settings->get_setting('fdm-disable-specials') && $specials_permissions ) ) {
 			$this->content_map['special'] = 'content/special';
 		}
 
@@ -371,6 +372,8 @@ class fdmView extends fdmBase {
 		global $fdm_controller;
 
 		echo '<style>';
+		$has_paid_styling = $fdm_controller->permissions->check_permission( 'styling' );
+		if ( $has_paid_styling ) {
 			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-menu-ordering .fdm-add-to-cart-button, .fdm-menu-ordering .fdm-options-add-to-cart-button, .fdm-style-ordering #fdm-ordering-popup-submit button, .cart-location-bottom .fdm-continue-shopping-button, .cart-location-bottom .fdm-clear-cart-button, .cart-location-bottom #fdm-order-submit-button, .cart-location-bottom #fdm-order-payment-form-div #paypal-submit, .cart-location-bottom #fdm-order-payment-form-div #stripe-submit, .fdm-ordering-bottom-bar-checkout-button { background: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-ordering-bottom-bar-toggle-inside { border-color: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-ordering-bottom-bar-toggle .dashicons { color: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
@@ -409,8 +412,9 @@ class fdmView extends fdmBase {
 			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-text-color') != '' ) { echo '.fdm-sidebar-mobile-expand-button:hover { color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-text-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') != '' ) { echo '.fdm-section-header:after { border-bottom-width: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') . 'px !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') != '' ) { echo '.fdm-section-header:after { border-bottom-color: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') . ' !important; }'; }
+		}
 			if ( $fdm_controller->settings->get_setting('fdm-display-section-descriptions') != '1' ) { echo '.fdm-section-header p { display: none; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') != '' ) { echo '.fdm-icon { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') . ' !important; }'; }
+			if ( $has_paid_styling && $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') != '' ) { echo '.fdm-icon { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-details-lightbox') != 'disabled' && $fdm_controller->settings->get_setting('fdm-details-lightbox') != '' ) { echo '.fdm-item-title, .fdm-item-image { cursor: pointer; }'; }
 		echo  '</style>';
 	}

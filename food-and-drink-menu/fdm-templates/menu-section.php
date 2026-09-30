@@ -1,4 +1,5 @@
-<ul <?php echo fdm_format_classes( $this->classes ); ?>>
+<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fdm_format_classes() sanitizes every class token. ?>
+<ul <?php echo fdm_format_classes( $this->classes ); ?> data-fdm-section="<?php echo esc_attr( $this->slug ); ?>">
 	<li class="fdm-section-header<?php echo ($this->background_image_placement == 'background' ? ' fdm-section-background-image' : ''); ?>" id="fdm-section-header-<?php echo esc_attr( $this->slug ); ?>">
 
 		<?php if ( ( $this->background_image_placement == 'background' ) and $this->image_url ) : ?>

@@ -58,6 +58,9 @@
 .fdm-item {
 	margin-bottom: 2em;
 }
+.fdm-spacing-compact .fdm-item { margin-bottom: 1em; }
+.fdm-spacing-comfortable .fdm-item { margin-bottom: 2.75em; }
+.fdm-spacing-spacious .fdm-item { margin-bottom: 4em; }
 .fdm-item-panel {
 	position: relative;
 }
@@ -636,7 +639,8 @@
 	width: 100%;
 }
 .fdm-details-div-inside .fdm-item .fdm-item-src-map {
-	display: none;
+	display: block;
+	max-width: 33%;
 }
 .fdm-details-div-inside .fdm-item .fdm-src-panel p.src-title {
 	font-size: 18px;
@@ -1040,3 +1044,29 @@
 .fdm-hidden {
 	display: none;
 }
+.fdm-price-position-below-title .fdm-item-price-wrapper {
+	position: relative;
+	top: auto;
+	right: auto;
+	width: 100%;
+	text-align: left;
+	white-space: normal;
+	display: flex;
+	flex-wrap: wrap;
+	gap: .25em .75em;
+}
+.fdm-price-position-below-title .fdm-item-has-price .fdm-item-panel p { padding-right: 0; }
+.fdm-price-position-inline .fdm-item-price-wrapper { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .25em .5em; white-space: normal; }
+.fdm-image-ratio-square .fdm-item-image { aspect-ratio: 1 / 1; }
+.fdm-image-ratio-four-three .fdm-item-image { aspect-ratio: 4 / 3; }
+.fdm-image-ratio-three-two .fdm-item-image { aspect-ratio: 3 / 2; }
+.fdm-image-ratio-square .fdm-item-image,
+.fdm-image-ratio-four-three .fdm-item-image,
+.fdm-image-ratio-three-two .fdm-item-image { height: auto; }
+.fdm-image-ratio-square.fdm-image-fit-cover .fdm-item-image,
+.fdm-image-ratio-four-three.fdm-image-fit-cover .fdm-item-image,
+.fdm-image-ratio-three-two.fdm-image-fit-cover .fdm-item-image { object-fit: cover; }
+.fdm-image-ratio-square.fdm-image-fit-contain .fdm-item-image,
+.fdm-image-ratio-four-three.fdm-image-fit-contain .fdm-item-image,
+.fdm-image-ratio-three-two.fdm-image-fit-contain .fdm-item-image { object-fit: contain; }
+.fdm-item-price-wrapper { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .2em .5em; }

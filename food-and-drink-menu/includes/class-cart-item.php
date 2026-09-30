@@ -30,6 +30,14 @@ class fdmCartItem {
 	// Item quantity
 	public $quantity;
 
+	// Immutable order-time pricing and display snapshots.
+	public $pricing_version;
+	public $snapshot_version;
+	public $price_snapshot;
+	public $title_snapshot;
+	public $option_snapshots = array();
+	public $selected_option_snapshots = array();
+
 	public function __construct( $args ) {
 		
 		// Parse the values passed

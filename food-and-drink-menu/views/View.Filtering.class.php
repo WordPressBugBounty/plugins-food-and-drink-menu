@@ -13,6 +13,8 @@ class fdmViewFiltering extends fdmView {
 	public $price_filtering_type = 'textbox'; 
 	public $enable_sorting = false;
 	public $sorting_types = array();
+	public $enable_section_filtering = false;
+	public $sections = array();
 
 	// the menu being displayed
 	public $menu;
@@ -37,7 +39,7 @@ class fdmViewFiltering extends fdmView {
 		// Gather data if it's not already set
 		$this->load_filtering();
 
-		if ( empty( $this->text_search ) and ! $this->enable_price_filtering and ! $this->enable_sorting )  {
+		if ( empty( $this->text_search ) && ! $this->enable_price_filtering && ! $this->enable_sorting && ! $this->enable_section_filtering )  {
 			return;
 		}
 
@@ -66,11 +68,23 @@ class fdmViewFiltering extends fdmView {
 	public function load_filtering() {
 		global $fdm_controller;
 
-		$this->text_search = $fdm_controller->settings->get_setting( 'fdm-text-search' );
-		$this->enable_price_filtering = $fdm_controller->settings->get_setting( 'fdm-enable-price-filtering' );
+		$paid_filtering = $fdm_controller->permissions->check_permission( 'filtering' );
+		$this->text_search = $paid_filtering ? $fdm_controller->settings->get_setting( 'fdm-text-search' ) : array();
+		$this->enable_price_filtering = $paid_filtering && $fdm_controller->settings->get_setting( 'fdm-enable-price-filtering' );
 		$this->price_filtering_type = $fdm_controller->settings->get_setting( 'fdm-price-filtering-type' );
-		$this->enable_sorting = $fdm_controller->settings->get_setting( 'fdm-enable-sorting' );
-		$this->sorting_types = $fdm_controller->settings->get_setting( 'fdm-item-sorting' );
+		$this->enable_section_filtering = (bool) $fdm_controller->settings->get_setting( 'fdm-enable-section-filtering' );
+		$name_sorting = ! $paid_filtering && (bool) $fdm_controller->settings->get_setting( 'fdm-enable-name-sorting' );
+		$this->enable_sorting = $name_sorting || ( $paid_filtering && $fdm_controller->settings->get_setting( 'fdm-enable-sorting' ) );
+		$this->sorting_types = $paid_filtering ? (array) $fdm_controller->settings->get_setting( 'fdm-item-sorting' ) : array();
+		if ( $name_sorting && ! in_array( 'name', $this->sorting_types, true ) ) $this->sorting_types[] = 'name';
+
+		if ( $this->enable_section_filtering && ! empty( $this->menu->groups ) ) {
+			foreach ( $this->menu->groups as $group ) {
+				foreach ( $group as $section ) {
+					if ( ! empty( $section->slug ) && ! empty( $section->title ) && ! empty( $section->items ) ) $this->sections[ $section->slug ] = $section->title;
+				}
+			}
+		}
 		
 		do_action( 'fdm_load_filtering', $this );
 	}

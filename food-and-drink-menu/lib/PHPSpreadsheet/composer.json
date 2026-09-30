@@ -1,0 +1,17 @@
+{
+    "name": "etoilewebdesign/restaurant-menu-spreadsheet-runtime",
+    "description": "Pinned spreadsheet runtime bundled with Five Star Restaurant Menu.",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "phpoffice/phpspreadsheet": "1.30.6"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        },
+        "allow-plugins": false,
+        "autoloader-suffix": "FDM260PhpSpreadsheet1306A9C4E7B21D5F8036",
+        "sort-packages": true
+    }
+}

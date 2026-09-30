@@ -1,8 +1,20 @@
-<div <?php echo fdm_format_classes( $this->classes ); ?>>
+<div <?php echo fdm_format_classes( $this->classes ); ?> data-menu-id='<?php echo esc_attr( $this->menu->id ); ?>' data-fdm-instance='<?php echo esc_attr( $this->menu->render_instance_id ); ?>'>
 
 	<h3 class='fdm-filtering-header'>
 		<?php echo esc_html( $this->get_label( 'label-filtering' ) ); ?>
 	</h3>
+
+	<?php if ( $this->enable_section_filtering && $this->sections ) : ?>
+		<div class='fdm-filtering-section fdm-filtering-menu-section'>
+			<label class='fdm-filtering-label' for='fdm-section-filter-<?php echo esc_attr( $this->menu->render_instance_id ); ?>'><?php esc_html_e( 'Menu section', 'food-and-drink-menu' ); ?></label>
+			<select id='fdm-section-filter-<?php echo esc_attr( $this->menu->render_instance_id ); ?>' class='fdm-filtering-section-input' data-menu-id='<?php echo esc_attr( $this->menu->id ); ?>'>
+				<option value=''><?php esc_html_e( 'All sections', 'food-and-drink-menu' ); ?></option>
+				<?php foreach ( $this->sections as $slug => $title ) : ?>
+					<option value='<?php echo esc_attr( $slug ); ?>'><?php echo esc_html( $title ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( ! empty( $this->text_search ) ) : ?>
 		<div class='fdm-filtering-section fdm-filtering-text-section'>
@@ -30,7 +42,7 @@
 					<span class='fdm-filtering-min-price-display'>0</span>
 					<span class='fdm-filtering-price-separator'> - </span> 
 					<span class='fdm-filtering-max-price-display'>1000</span>
-					<div id='fdm-filtering-price-slider'></div>
+					<div class='fdm-filtering-price-slider'></div>
 				</div>
 			<?php endif; ?>
 		</div>
@@ -44,19 +56,19 @@
 		
 			<select class='fdm-filtering-sorting-input' >
 				<option value=''></option>
-				<?php if ( in_array('name', $this->sorting_types ) ) : ?>
+				<?php if ( in_array( 'name', $this->sorting_types, true ) ) : ?>
 					<option value='name_asc' ><?php echo esc_html( $this->get_label( 'label-name-asc' ) ); ?></option>
 					<option value='name_desc' ><?php echo esc_html( $this->get_label( 'label-name-desc' ) ); ?></option>
 				<?php endif; ?>
-				<?php if ( in_array('price', $this->sorting_types ) ) : ?>
+				<?php if ( in_array( 'price', $this->sorting_types, true ) ) : ?>
 					<option value='price_asc' ><?php echo esc_html( $this->get_label( 'label-price-asc' ) ); ?></option>
 					<option value='price_desc' ><?php echo esc_html( $this->get_label( 'label-price-desc' ) ); ?></option>
 				<?php endif; ?>
-				<?php if ( in_array('date_added', $this->sorting_types ) ) : ?>
+				<?php if ( in_array( 'date_added', $this->sorting_types, true ) ) : ?>
 					<option value='date_asc' ><?php echo esc_html( $this->get_label( 'label-date-added-asc' ) ); ?></option>
 					<option value='date_desc' ><?php echo esc_html( $this->get_label( 'label-date-added-desc' ) ); ?></option>
 				<?php endif; ?>
-				<?php if ( in_array('name', $this->sorting_types ) ) : ?>
+				<?php if ( in_array( 'section', $this->sorting_types, true ) ) : ?>
 					<option value='section_asc' ><?php echo esc_html( $this->get_label( 'label-section-asc' ) ); ?></option>
 					<option value='section_desc' ><?php echo esc_html( $this->get_label( 'label-section-desc' ) ); ?></option>
 				<?php endif; ?>

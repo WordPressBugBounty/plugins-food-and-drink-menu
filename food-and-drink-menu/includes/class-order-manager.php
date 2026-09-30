@@ -15,6 +15,7 @@ class fdmOrderManager {
 	public function __construct() {
 
 		add_action( 'admin_init', array( $this, 'maybe_delete_old_orders' ) );
+		add_action( 'fdm_cleanup_old_orders', array( $this, 'maybe_delete_old_orders' ) );
 
 		add_action( 'transition_post_status', array( $this, 'handle_order_post_status_notifications' ), 10, 3 );
 	}
@@ -27,7 +28,9 @@ class fdmOrderManager {
 		$order_statuses = fdm_get_order_statuses();
 
 		$args = array( 
-			'numberposts' 	=> -1, 
+			'posts_per_page' => 100,
+			'fields'          => 'ids',
+			'no_found_rows'   => true,
 			'post_type' 	=> FDM_ORDER_POST_TYPE,
 			'post_status'	=> array_keys( $order_statuses ),
 			'date_query' 	=> array(
@@ -38,34 +41,72 @@ class fdmOrderManager {
 		);
 
 		$query = new WP_Query( $args );
+		$delete_posts = $query->posts;
 
-		$delete_posts = $query->get_posts();
-
-		foreach ( $delete_posts as $delete_post ) {
-			wp_delete_post( $delete_post->ID, true );
+		foreach ( $delete_posts as $delete_post_id ) {
+			wp_delete_post( $delete_post_id, true );
 		}
 
-		update_option( 'fdm-delete-order-check', time() );
+		if ( count( $delete_posts ) < 100 ) update_option( 'fdm-delete-order-check', time() );
+		elseif ( ! wp_next_scheduled( 'fdm_cleanup_old_orders' ) ) wp_schedule_single_event( time() + 60, 'fdm_cleanup_old_orders' );
 	}
 
 	public function submit_order( $args ) {
 		global $fdm_controller;
-
-		$args['order_items'] 			= $fdm_controller->cart->get_cart_items();
-		$args['edit_confirmation_code']	= $this->return_random_string();
-
-		if ( ! empty( $args['devlivery'] ) and ! empty( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ) {
-
-			$args['delivery_amount'] = floatval( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) );
+		$delivery_mode = isset( $args['delivery'] ) ? $args['delivery'] : '';
+		if ( ! in_array( $delivery_mode, array( 'pickup', 'delivery' ), true ) ) {
+			return new WP_Error( 'fdm_invalid_delivery_mode', __( 'Choose pickup or delivery.', 'food-and-drink-menu' ) );
+		}
+		if ( 'delivery' === $delivery_mode && ! $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) ) {
+			return new WP_Error( 'fdm_delivery_unavailable', __( 'Delivery is not currently available.', 'food-and-drink-menu' ) );
 		}
 
-		if ( ! isset( $args['post_status'] ) ) { $args['post_status'] = 'fdm_order_received'; }
+		$payment_path = isset( $args['payment_path'] ) ? $args['payment_path'] : '';
+		$payment_enabled = (bool) $fdm_controller->settings->get_setting( 'enable-payment' );
+		$payment_optional = (bool) $fdm_controller->settings->get_setting( 'payment-optional' );
+		$valid_payment_path = ( ! $payment_enabled && 'none' === $payment_path )
+			|| ( $payment_enabled && 'online' === $payment_path )
+			|| ( $payment_enabled && $payment_optional && 'store' === $payment_path );
+		if ( ! $valid_payment_path ) {
+			return new WP_Error( 'fdm_invalid_payment_path', __( 'The selected payment method is not available.', 'food-and-drink-menu' ) );
+		}
+
+		if ( $fdm_controller->cart->get_validation_errors() ) {
+			return new WP_Error( 'fdm_stale_cart', __( 'Your menu changed while you were ordering. Please review your cart and try again.', 'food-and-drink-menu' ) );
+		}
+
+		$pricing = new fdmOrderPricing();
+		$order_items = $pricing->revalidate_cart_items( $fdm_controller->cart->get_cart_items() );
+		if ( is_wp_error( $order_items ) ) { return $order_items; }
+
+		$args['order_items'] 			= $order_items;
+		$args['edit_confirmation_code']	= $this->return_random_string();
+		$args['pricing_version']		= fdmOrderPricing::SNAPSHOT_VERSION;
+		$args['order_currency']		= strtoupper( sanitize_text_field( $fdm_controller->settings->get_setting( 'ordering-currency' ) ) );
+		$args['pricing_snapshot_version'] = fdmOrderPricing::SNAPSHOT_VERSION;
+		$args['currency']             = $args['order_currency'];
+		$args['delivery']			= 'delivery' === $delivery_mode;
+
+		$tip_amount = fdmOrderPricing::normalize_money( isset( $args['tip_amount'] ) ? $args['tip_amount'] : 0 );
+		if ( null === $tip_amount ) {
+			return new WP_Error( 'fdm_invalid_tip', __( 'Enter a valid non-negative tip amount.', 'food-and-drink-menu' ) );
+		}
+		$args['tip_amount'] = $tip_amount;
+
+		$args['post_status'] = 'online' === $payment_path ? 'draft' : 'fdm_order_received';
+		unset( $args['payment_path'] );
+		$args['custom_field_snapshots'] = fdm_create_order_custom_field_snapshots( isset( $args['custom_fields'] ) ? $args['custom_fields'] : array() );
+		$args['custom_fields'] = array();
+		foreach ( $args['custom_field_snapshots'] as $snapshot ) $args['custom_fields'][ $snapshot['slug'] ] = $snapshot['value'];
 
 		$order = new fdmOrderItem( $args );
 
 		$order->set_payment_amounts();
 
-		$order->save_order_post(); 
+		$saved = $order->save_order_post();
+		if ( is_wp_error( $saved ) || empty( $order->id ) ) {
+			return new WP_Error( 'fdm_order_insert_failed', __( 'The order could not be saved. Please try again.', 'food-and-drink-menu' ) );
+		}
 
 		$fdm_controller->cart->clear_cart();
 
@@ -219,15 +260,18 @@ class fdmOrderManager {
 
 		if ( ! empty( $fdm_controller->settings->get_setting( 'fdm-ordering-pause-ordering' ) ) ) { return false; }
 
+		$maximum = absint( $fdm_controller->settings->get_setting( 'fdm-ordering-maximum-received-orders' ) );
 		$args = array(
 			'post_type'			=> FDM_ORDER_POST_TYPE,
 			'post_status'		=> 'fdm_order_received',
-			'posts_per_page'	=> -1,
+			'posts_per_page'	=> 1,
+			'fields'			=> 'ids',
+			'no_found_rows'		=> false,
 		);
 
-		$orders = get_posts( $args );
+		$order_query = new WP_Query( $args );
 		
-		if ( ! empty( $fdm_controller->settings->get_setting( 'fdm-ordering-maximum-received-orders' ) ) and sizeOf( $orders ) >= $fdm_controller->settings->get_setting( 'fdm-ordering-maximum-received-orders' ) ) { return false; }
+		if ( $maximum && $order_query->found_posts >= $maximum ) { return false; }
 
 		if ( empty( $this->is_open_for_ordering ) ) { $this->is_open_for_ordering = $this->determine_open_for_ordering(); }
 

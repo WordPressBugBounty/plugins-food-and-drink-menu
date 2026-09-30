@@ -69,7 +69,19 @@ class fdmSettings {
 		add_filter( 'fdm_shortcode_menu_atts', array( $this, 'set_style' ) );
 		add_filter( 'fdm_shortcode_menu_section_atts', array( $this, 'set_style' ) );
 		add_filter( 'fdm_shortcode_menu_item_atts', array( $this, 'set_style' ) );
+		add_filter( 'fdm-setting-fdm-pro-style', array( $this, 'get_effective_pro_style' ) );
 
+	}
+
+	public function get_effective_pro_style( $style ) {
+		global $fdm_controller;
+		$allowed = array( 'classic', 'refined', 'image' );
+		if ( isset( $fdm_controller->permissions ) && $fdm_controller->permissions->check_permission( 'styling' ) ) {
+			$allowed[] = 'luxe';
+			$allowed[] = 'ordering';
+		}
+
+		return in_array( $style, $allowed, true ) ? $style : 'classic';
 	}
 
 	/**
@@ -328,6 +340,48 @@ Click on the following link to accept the order: {accept_link}
 				'options'		=> $options
 			)
 		);
+		$pro_style_options = apply_filters(
+			'fdm_pro_style_options',
+			array(
+				'classic' => __( 'Classic Style', 'food-and-drink-menu' ),
+				'refined' => __( 'Refined', 'food-and-drink-menu' ),
+				'image'   => __( 'Image Style', 'food-and-drink-menu' ),
+			)
+		);
+		$sap->add_setting(
+			'food-and-drink-menu-settings',
+			'fdm-style-settings',
+			'select',
+			array(
+				'id'                   => 'fdm-pro-style',
+				'title'                => __( 'Menu Style', 'food-and-drink-menu' ),
+				'description'          => __( 'Choose the visual style used when Apply Menu Styles is selected.', 'food-and-drink-menu' ),
+				'blank_option'         => false,
+				'options'              => $pro_style_options,
+				'conditional_on'       => 'fdm-style',
+				'conditional_on_value' => 'prostyles',
+			)
+		);
+		$sap->add_setting(
+			'food-and-drink-menu-settings',
+			'fdm-style-settings',
+			'radio',
+			array(
+				'id' => 'fdm-image-style-columns', 'title' => __( 'Image Style Columns', 'food-and-drink-menu' ),
+				'options' => array( 'three' => '3', 'four' => '4', 'five' => '5' ), 'default' => $this->defaults['fdm-image-style-columns'],
+				'conditional_on' => 'fdm-pro-style', 'conditional_on_value' => 'image',
+			)
+		);
+		$sap->add_setting(
+			'food-and-drink-menu-settings',
+			'fdm-style-settings',
+			'radio',
+			array(
+				'id' => 'fdm-refined-style-columns', 'title' => __( 'Refined Style Columns', 'food-and-drink-menu' ),
+				'options' => array( 'one' => '1', 'two' => '2' ), 'default' => $this->defaults['fdm-refined-style-columns'],
+				'conditional_on' => 'fdm-pro-style', 'conditional_on_value' => 'refined',
+			)
+		);
 		$sap->add_setting(
 			'food-and-drink-menu-settings',
 			'fdm-style-settings',
@@ -405,6 +459,28 @@ Click on the following link to accept the order: {accept_link}
 				'tab'			=> 'fdm-basic-settings'
 			)
 		);
+		$sap->add_setting(
+			'food-and-drink-menu-settings',
+			'fdm-enable-settings',
+			'toggle',
+			array(
+				'id' => 'fdm-enable-section-filtering',
+				'title' => __( 'Filter by Section', 'food-and-drink-menu' ),
+				'description' => __( 'Allow visitors to show menu items from one section at a time.', 'food-and-drink-menu' ),
+			)
+		);
+		if ( ! $fdm_controller->permissions->check_permission( 'advanced' ) ) {
+			$sap->add_setting(
+				'food-and-drink-menu-settings',
+				'fdm-enable-settings',
+				'toggle',
+				array(
+					'id' => 'fdm-enable-name-sorting',
+					'title' => __( 'Sort by Item Name', 'food-and-drink-menu' ),
+					'description' => __( 'Allow visitors to sort menu items by name in either direction.', 'food-and-drink-menu' ),
+				)
+			);
+		}
 		$sap->add_setting(
 			'food-and-drink-menu-settings',
 			'fdm-enable-settings',

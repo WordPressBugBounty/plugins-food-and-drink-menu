@@ -3,11 +3,13 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.5.4
+ * Version: 2.6.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Five Star Plugins
  * Author URI: https://www.fivestarplugins.com/
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: food-and-drink-menu
  * Domain Path: /languages
  */
@@ -22,6 +24,7 @@ class fdmFoodAndDrinkMenu {
 	public $orders;
 	public $permissions;
 	public $settings;
+	public $structured_data;
 
 	// overall styling options
 	public $styles = array();
@@ -44,7 +47,8 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.5.4' );
+		define( 'FDM_VERSION', '2.6.0' );
+		define( 'FDM_FSPPH_CONTRACT_VERSION', 1 );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -76,6 +80,12 @@ class fdmFoodAndDrinkMenu {
 		// Load custom post types
 		require_once( FDM_PLUGIN_DIR . '/includes/class-custom-post-types.php' );
 		$this->cpts = new fdmCustomPostTypes();
+		require_once( FDM_PLUGIN_DIR . '/includes/class-menu-authoring.php' );
+		new fdmMenuAuthoring();
+		require_once( FDM_PLUGIN_DIR . '/includes/class-item-attributes.php' );
+		new fdmItemAttributes();
+		require_once( FDM_PLUGIN_DIR . '/includes/class-structured-data.php' );
+		$this->structured_data = new fdmStructuredData();
 
 		// Load deactivation survey
 		require_once( FDM_PLUGIN_DIR . '/includes/class-deactivation-survey.php' );
@@ -98,6 +108,7 @@ class fdmFoodAndDrinkMenu {
 		$this->settings = new fdmSettings();
 
 		// Load import/export
+		require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
 		require_once( FDM_PLUGIN_DIR . '/includes/class-export.php' );
 		require_once( FDM_PLUGIN_DIR . '/includes/class-import.php' );
 		new fdmExport();
@@ -109,6 +120,7 @@ class fdmFoodAndDrinkMenu {
 			add_action( 'init', array( $this, 'add_roles' ) );
 
 			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-item.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-item.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-email.php' );
@@ -154,6 +166,7 @@ class fdmFoodAndDrinkMenu {
 
 		// Handle the helper notice
 		add_action( 'admin_notices', array( $this, 'maybe_display_helper_notice' ) );
+		add_action( 'admin_notices', array( $this, 'maybe_display_helper_compatibility_notice' ) );
 		add_action( 'wp_ajax_fdm_hide_helper_notice', array( $this, 'hide_helper_notice' ) );
 
 		// New Plugin Notice
@@ -505,7 +518,7 @@ class fdmFoodAndDrinkMenu {
 			<h2 class="nav-tab-wrapper">
 			<a id="fdm-dash-mobile-menu-open" href="#" class="menu-tab nav-tab fdm-hidden"><span class="dashicons dashicons-menu"></span><?php _e("Menu", 'order-tracking'); ?></a>
 			<a id="dashboard-menu" href='edit.php?post_type=fdm-menu&page=fdm-dashboard' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu_page_fdm-dashboard') {echo 'nav-tab-active';}?>"><?php _e("Dashboard", 'food-and-drink-menu'); ?></a>
-			<?php if ($fdm_controller->settings->get_setting( 'fdm-enable-ordering' ) ) { ?><a id="orders-menu" href='edit.php?post_type=fdm-menu&page=fdm-orders' class="menu-tab nav-tab <?php if (isset($_GET['page']) and $_GET['page'] == 'fdm-orders') {echo 'nav-tab-active';}?>"><?php _e("Orders", 'food-and-drink-menu'); ?></a><?php } ?>
+			<?php if ($fdm_controller->settings->get_setting( 'fdm-enable-ordering' ) && $fdm_controller->permissions->check_permission( 'ordering' ) ) { ?><a id="orders-menu" href='edit.php?post_type=fdm-menu&page=fdm-orders' class="menu-tab nav-tab <?php if (isset($_GET['page']) and $_GET['page'] == 'fdm-orders') {echo 'nav-tab-active';}?>"><?php _e("Orders", 'food-and-drink-menu'); ?></a><?php } ?>
 			<a id="menus-menu" href='edit.php?post_type=fdm-menu' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu' || $screenID == 'edit-fdm-menu') {echo 'nav-tab-active';}?>"><?php _e("Menus", 'food-and-drink-menu'); ?></a>
 			<a id="menu-items-menu" href='edit.php?post_type=fdm-menu-item' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu-item' || $screenID == 'edit-fdm-menu-item') {echo 'nav-tab-active';}?>"><?php _e("Menu Items", 'food-and-drink-menu'); ?></a>
 			<a id="sections-menu" href='edit-tags.php?taxonomy=fdm-menu-section&post_type=fdm-menu-item' class="menu-tab nav-tab <?php if ($screenID == 'fdm-menu-section' || $screenID == 'edit-fdm-menu-section') {echo 'nav-tab-active';}?>"><?php _e("Sections", 'food-and-drink-menu'); ?></a>
@@ -763,9 +776,22 @@ class fdmFoodAndDrinkMenu {
 	
 		</div>
 	
-		<?php 
+		<?php
 	}
-	
+
+	public function maybe_display_helper_compatibility_notice() {
+		if ( ! $this->permissions->check_permission( 'premium' ) || ! is_plugin_active( 'fsp-premium-helper/fsp-premium-helper.php' ) ) return;
+		if ( $this->permissions->has_compatible_helper_contract() ) return;
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && false === strpos( (string) $screen->id, 'fdm' ) ) return;
+		?>
+		<div class="notice notice-warning is-dismissible">
+			<p><?php esc_html_e( 'Your FSP Premium Helper is too old for this Five Star Restaurant Menu release. Update the Helper to restore supported paid-feature compatibility. Free menu features remain available.', 'food-and-drink-menu' ); ?></p>
+		</div>
+		<?php
+	}
+
 	public function hide_helper_notice() {
 	
 		// Authenticate request

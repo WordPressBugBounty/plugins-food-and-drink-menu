@@ -1,262 +1,291 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+if ( ! class_exists( 'fdmImport' ) ) {
 /**
- * Class to handle everything related to the walk-through that runs on plugin activation
+ * Secure menu-item spreadsheet import.
  */
-
-if ( !defined( 'ABSPATH' ) )
-	exit;
-
-if (!class_exists('ComposerAutoloaderInit4618f5c41cf5e27cc7908556f031e4d4')) {require_once FDM_PLUGIN_DIR . '/lib/PHPSpreadsheet/vendor/autoload.php';}
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 class fdmImport {
 
-	public $status;
-	public $message;
+	const ACTION = 'fdm_import_menu_items';
 
 	public function __construct() {
-		add_action( 'admin_menu', array($this, 'register_install_screen' ));
-
-		if ( isset( $_POST['fdmImport'] ) ) { add_action( 'admin_menu', array($this, 'import_menu_items' )); }
+		add_action( 'admin_menu', array( $this, 'register_install_screen' ) );
+		add_action( 'admin_post_' . self::ACTION, array( $this, 'import_menu_items' ) );
 	}
 
 	public function register_install_screen() {
-		
-		add_submenu_page( 
-			'edit.php?post_type=fdm-menu', 
-			'Import Menu', 
-			'Import', 
-			'manage_options', 
-			'fdm-import', 
-			array($this, 'display_import_screen') 
+		add_submenu_page(
+			'edit.php?post_type=fdm-menu',
+			__( 'Import Menu', 'food-and-drink-menu' ),
+			__( 'Import', 'food-and-drink-menu' ),
+			'manage_options',
+			'fdm-import',
+			array( $this, 'display_import_screen' )
 		);
 	}
 
 	public function display_import_screen() {
 		global $fdm_controller;
-
-		$import_permission = $fdm_controller->permissions->check_permission( 'import' );
+		$allowed = $fdm_controller->permissions->check_permission( 'import' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status set by a safe post-action redirect and restricted to a fixed allowlist below.
+		$notice = isset( $_GET['fdm_import_notice'] ) ? sanitize_key( wp_unslash( $_GET['fdm_import_notice'] ) ) : '';
+		$notices = array(
+			'success'       => __( 'Menu items imported successfully.', 'food-and-drink-menu' ),
+			'invalid_file'  => __( 'Choose a valid CSV, XLS, or XLSX spreadsheet.', 'food-and-drink-menu' ),
+			'invalid_sheet' => __( 'The spreadsheet could not be read or is missing required Title and Price columns.', 'food-and-drink-menu' ),
+			'invalid_row'   => __( 'The import stopped because a row contains invalid data or targets a non-menu item.', 'food-and-drink-menu' ),
+			'failed'        => __( 'The import could not be completed. No server file path has been exposed.', 'food-and-drink-menu' ),
+		);
 		?>
-		<div class='wrap'>
-			<h2>Import</h2>
-			<?php if ( $import_permission ) { ?> 
-				<form method='post' enctype="multipart/form-data">
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Import', 'food-and-drink-menu' ); ?></h1>
+			<?php if ( isset( $notices[ $notice ] ) ) : ?>
+				<div class="notice <?php echo 'success' === $notice ? 'notice-success' : 'notice-error'; ?> is-dismissible"><p><?php echo esc_html( $notices[ $notice ] ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( $allowed ) : ?>
+				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data">
+					<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>" />
+					<?php wp_nonce_field( self::ACTION ); ?>
 					<p>
-						<label for="fdm_menu_items_spreadsheet"><?php _e( 'Spreadsheet Containing Menu Items', 'food-and-drink-menu' ) ?></label><br />
-						<input name="fdm_menu_items_spreadsheet" type="file" value=""/>
+						<label for="fdm_menu_items_spreadsheet"><?php esc_html_e( 'Spreadsheet Containing Menu Items', 'food-and-drink-menu' ); ?></label><br />
+						<input id="fdm_menu_items_spreadsheet" name="fdm_menu_items_spreadsheet" type="file" accept=".csv,.xls,.xlsx" required />
 					</p>
-					<input type='submit' name='fdmImport' value='Import Menu Items' class='button button-primary' />
+					<?php submit_button( __( 'Import Menu Items', 'food-and-drink-menu' ) ); ?>
 				</form>
-			<?php } else { ?>
-				<div class='fdm-premium-locked'>
-					<a href="https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1&utm_source=fdm_admin_import_page" target="_blank">Upgrade</a> to the premium version to use this feature
-				</div>
-			<?php } ?>
+			<?php else : ?>
+				<div class="fdm-premium-locked"><a href="https://www.fivestarplugins.com/license-payment/?Selected=FDM&amp;Quantity=1&amp;utm_source=fdm_admin_import_page" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade', 'food-and-drink-menu' ); ?></a> <?php esc_html_e( 'to the premium version to use this feature.', 'food-and-drink-menu' ); ?></div>
+			<?php endif; ?>
 		</div>
-	<?php }
+		<?php
+	}
 
 	public function import_menu_items() {
 		global $fdm_controller;
 
-		if ( ! current_user_can( 'edit_posts' ) ) { return; }
+		if ( 'POST' !== strtoupper( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) ) {
+			wp_die( esc_html__( 'Invalid request method.', 'food-and-drink-menu' ), '', array( 'response' => 405 ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to import menu items.', 'food-and-drink-menu' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( self::ACTION );
+		if ( ! $fdm_controller->permissions->check_permission( 'import' ) ) {
+			wp_die( esc_html__( 'A paid entitlement is required to import menu items.', 'food-and-drink-menu' ), '', array( 'response' => 403 ) );
+		}
 
-		$fields = $fdm_controller->settings->get_menu_item_custom_fields();
+		$uploaded_file = '';
+		$notice = 'failed';
+		try {
+			$uploaded_file = $this->handle_spreadsheet_upload();
+			$this->process_spreadsheet( $uploaded_file );
+			do_action( 'fdm_import_completed' );
+			$notice = 'success';
+		} catch ( UnexpectedValueException $exception ) {
+			$notice = 'invalid_file';
+		} catch ( DomainException $exception ) {
+			$notice = 'invalid_row';
+		} catch ( Throwable $exception ) {
+			$notice = 'failed';
+		} finally {
+			if ( $uploaded_file && file_exists( $uploaded_file ) ) {
+				wp_delete_file( $uploaded_file );
+			}
+		}
+		$this->redirect_with_notice( $notice );
+	}
 
-		$update = $this->handle_spreadsheet_upload();
+	private function handle_spreadsheet_upload() {
+		// The caller has already passed capability and admin nonce checks.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( empty( $_FILES['fdm_menu_items_spreadsheet'] ) || ! is_array( $_FILES['fdm_menu_items_spreadsheet'] ) ) {
+			throw new UnexpectedValueException( 'missing_upload' );
+		}
 
-		if ( $update['message_type'] != 'Success' ) :
-			$this->status = false;
-			$this->message =  $update['message'];
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- wp_handle_upload() requires the original PHP upload array; name is sanitized before use.
+		$file = $_FILES['fdm_menu_items_spreadsheet'];
+		if ( ! isset( $file['error'] ) || UPLOAD_ERR_OK !== (int) $file['error'] || empty( $file['tmp_name'] ) || empty( $file['name'] ) ) {
+			throw new UnexpectedValueException( 'upload_error' );
+		}
 
-			add_action( 'admin_notices', array( $this, 'display_notice' ) );
+		$name = sanitize_file_name( wp_unslash( $file['name'] ) );
+		$file['name'] = $name;
+		$extension = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
+		if ( ! in_array( $extension, array( 'csv', 'xls', 'xlsx' ), true ) ) {
+			throw new UnexpectedValueException( 'invalid_extension' );
+		}
 
-			return;
-		endif;
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		$upload = wp_handle_upload(
+			$file,
+			array(
+				'test_form' => false,
+				'mimes'     => array(
+					'csv'  => 'text/csv|text/plain|application/csv',
+					'xls'  => 'application/vnd.ms-excel',
+					'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				),
+			)
+		);
+		if ( ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
+			throw new UnexpectedValueException( 'invalid_upload' );
+		}
 
-		$excel_url = FDM_PLUGIN_DIR . '/user-sheets/' . $update['filename'];
+		return $upload['file'];
+	}
 
-	    // Build the workbook object out of the uploaded spreadsheet
-	    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load( $excel_url );
-	
-	    // Create a worksheet object out of the product sheet in the workbook
-	    $sheet = $spreadsheet->getActiveSheet();
-	
-	    $allowable_custom_fields = array();
-	    foreach ( $fields as $field ) { $allowable_custom_fields[] = $field->name; }
-	    //List of fields that can be accepted via upload
-	    $allowed_fields = array( 'ID', 'Title', 'Description', 'Price', 'Sections' );
-	
-	
-	    // Get column names
-	    $highest_column = $sheet->getHighestColumn();
-	    $highest_column_index = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highest_column);
-	    for ( $column = 1; $column <= $highest_column_index; $column++ ) {
-	        if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == 'ID' ) { $ID_column = $column; }
-	        if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == 'Title' ) { $title_column = $column; }
-	        if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == 'Description' ) { $description_column = $column; }
-	        if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == 'Price' ) { $price_column = $column; }
-	        if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == 'Sections' ) { $sections_column = $column; }
-	
-	        foreach ( $fields as $key => $field ) {
-	            if ( trim( $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) == $field->name ) { $field->column = $column; }
-	        }
-	    }
-	
-	
-	    // Put the spreadsheet data into a multi-dimensional array to facilitate processing
-	    $highest_row = $sheet->getHighestRow();
-	    for ( $row = 2; $row <= $highest_row; $row++ ) {
-	        for ( $column = 1; $column <= $highest_column_index; $column++ ) {
-	            $data[$row][$column] = $sheet->getCellByColumnAndRow( $column, $row )->getValue();
-	        }
-	    }
-	
-	    // Create the query to insert the products one at a time into the database and then run it
-	    foreach ( $data as $menu_item ) {
-	        // Create an array of the values that are being inserted for each order,
-	        // edit if it's a current order, otherwise add it
-	        foreach ( $menu_item as $col_index => $value ) {
-	            if (	isset( $ID_column ) and $col_index == $ID_column and $ID_column !== null ) { $post['ID'] = esc_sql( $value ); }
-	            if (	$col_index == $title_column and $title_column !== null ) { $post['post_title'] = esc_sql( $value ); }
-	            if (	$col_index == $description_column and $description_column !== null ) { $post['post_content'] = esc_sql( $value ); }
-	            if (	$col_index == $price_column and $price_column !== null ) {$post_prices = explode( ';', esc_sql( $value ) ); }
-	            if (	isset( $sections_column ) and $col_index == $sections_column and $sections_column !== null ) { $post_sections = explode( ',', esc_sql( $value ) ); }
-	        }
-	
-	        if ( ! is_array( $post_prices ) ) { $post_prices = array(); }
-	        if ( ! is_array( $post_sections ) ) { $post_sections = array(); }
-	
-	        if ( $post['post_title'] == '' ) { continue; }
-	
-	        $post['post_status'] = 'publish';
-	        $post['post_type'] = 'fdm-menu-item';
-		
-			if ( isset( $post['ID'] ) and $post['ID'] != '') { $post_id = wp_update_post( $post ); }
-	        else { $post_id = wp_insert_post( $post ); }
-	        
-	        if ( $post_id != 0 ) {
+	private function process_spreadsheet( $path ) {
+		global $fdm_controller;
+		$this->load_spreadsheet_library();
 
-	            foreach ( $post_sections as $section ) {
-	                $menu_section = term_exists( $section, 'fdm-menu-section' );
-	                if ( $menu_section !== 0 && $menu_section !== null ) { $menu_section_ids[] = (int) $menu_section['term_id']; }
-	            }
-	            if ( isset($menu_section_ids) and is_array($menu_section_ids) ) { wp_set_object_terms( $post_id, $menu_section_ids, 'fdm-menu-section' ); }
+		$reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile( $path );
+		$extension = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+		$reader_class = strtolower( get_class( $reader ) );
+		if ( false === strpos( $reader_class, '\\' . $extension ) ) {
+			throw new UnexpectedValueException( 'content_extension_mismatch' );
+		}
+		if ( method_exists( $reader, 'setReadDataOnly' ) ) {
+			$reader->setReadDataOnly( true );
+		}
 
-				if ( ! empty( $post_prices ) ) {
-
-					delete_post_meta( $post_id, 'fdm_item_price' );
-
-					foreach ( $post_prices as $post_price ) {
-						
-						add_post_meta( $post_id, 'fdm_item_price', $post_price );
-					}
+		$spreadsheet = $reader->load( $path );
+		try {
+			$sheet = $spreadsheet->getActiveSheet();
+			$headers = $this->read_headers( $sheet );
+			$fields = $fdm_controller->settings->get_menu_item_custom_fields();
+			$field_headers = array();
+			$legacy_names = array_count_values( array_map( function( $field ) { return (string) $field->name; }, $fields ) );
+			$reserved = array( 'ID', 'Title', 'Description', 'Price', 'Sections' );
+			$fields_by_slug = array();
+			foreach ( $fields as $field ) {
+				if ( 'section' === $field->type ) continue;
+				$fields_by_slug[ sanitize_key( $field->slug ) ] = $field;
+				if ( 1 === $legacy_names[ (string) $field->name ] && ! in_array( $field->name, $reserved, true ) ) {
+					$field_headers[ $field->name ] = $field;
 				}
-	
-	            $field_values = array();
-	            foreach ( $fields as $field ) {
-	                if ( isset($field->column) and isset( $menu_item[$field->column] ) ) {
-	                    
-	                    $field_values[ $field->slug ] = $field->type == 'checkbox' ? explode( ',', esc_sql( $menu_item[ $field->column ] ) ) : esc_sql( $menu_item[ $field->column ] );
-	                }
-	            }
-	            update_post_meta( $post_id, '_fdm_menu_item_custom_fields', $field_values );
-	        }
-	
-	        unset( $post );
-	        unset( $post_sections );
-	        unset( $menu_section_ids );
-	        unset( $post_prices );
-	        unset( $field_values );
-	    }
+			}
+			foreach ( array_keys( $headers ) as $header ) {
+				if ( preg_match( '/\[fdm:([a-z0-9_-]+)(?::[0-9]+)?\]$/', $header, $match ) && isset( $fields_by_slug[ $match[1] ] ) ) {
+					$field_headers[ $header ] = $fields_by_slug[ $match[1] ];
+				}
+			}
 
-	    $this->status = true;
-		$this->message = __("Menu items added successfully.", 'food-and-drink-menu');
-
-		add_action( 'admin_notices', array( $this, 'display_notice' ) );
-	}
-
-	function handle_spreadsheet_upload() {
-		  /* Test if there is an error with the uploaded spreadsheet and return that error if there is */
-        if (!empty($_FILES['fdm_menu_items_spreadsheet']['error']))
-        {
-                switch($_FILES['fdm_menu_items_spreadsheet']['error'])
-                {
-
-                case '1':
-                        $error = __('The uploaded file exceeds the upload_max_filesize directive in php.ini', 'food-and-drink-menu');
-                        break;
-                case '2':
-                        $error = __('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', 'food-and-drink-menu');
-                        break;
-                case '3':
-                        $error = __('The uploaded file was only partially uploaded', 'food-and-drink-menu');
-                        break;
-                case '4':
-                        $error = __('No file was uploaded.', 'food-and-drink-menu');
-                        break;
-
-                case '6':
-                        $error = __('Missing a temporary folder', 'food-and-drink-menu');
-                        break;
-                case '7':
-                        $error = __('Failed to write file to disk', 'food-and-drink-menu');
-                        break;
-                case '8':
-                        $error = __('File upload stopped by extension', 'food-and-drink-menu');
-                        break;
-                case '999':
-                        default:
-                        $error = __('No error code avaiable', 'food-and-drink-menu');
-                }
-        }
-        /* Make sure that the file exists */
-        elseif (empty($_FILES['fdm_menu_items_spreadsheet']['tmp_name']) || $_FILES['fdm_menu_items_spreadsheet']['tmp_name'] == 'none') {
-                $error = __('No file was uploaded here..', 'food-and-drink-menu');
-        }
-        /* Move the file and store the URL to pass it onwards*/
-        /* Check that it is a .xls or .xlsx file */ 
-        if (!isset($_FILES['fdm_menu_items_spreadsheet']['name']) or (!preg_match("/\.(xls.?)$/", $_FILES['fdm_menu_items_spreadsheet']['name']) and !preg_match("/\.(csv.?)$/", $_FILES['fdm_menu_items_spreadsheet']['name']))) {
-            
-            $error = __('File must be .csv, .xls or .xlsx', 'food-and-drink-menu');
-        }
-        else {
-                        
-                        $filename = basename( $_FILES['fdm_menu_items_spreadsheet']['name'] );
-                        $filename = mb_ereg_replace( "([^\w\s\d\-_~,;\[\]\(\).])", '', $filename );
-                        $filename = mb_ereg_replace( "([\.]{2,})", '', $filename );
-
-                        //for security reason, we force to remove all uploaded file
-                        $target_path = FDM_PLUGIN_DIR . "/user-sheets/";
-
-                        $target_path = $target_path . $filename;
-
-                        if (!move_uploaded_file($_FILES['fdm_menu_items_spreadsheet']['tmp_name'], $target_path)) {
-                              $error .= "There was an error uploading the file, please try again!";
-                        }
-                        else {
-                                $excel_file_name = $filename;
-                        }
-        }
-
-        /* Pass the data to the appropriate function in Update_Admin_Databases.php to create the products */
-        if (!isset($error)) {
-                $update = array("message_type" => "Success", "filename" => $excel_file_name);
-        }
-        else {
-                $update = array("message_type" => "Error", "message" => $error);
-        }
-        return $update;
-	}
-
-	public function display_notice() {
-		if ( $this->status ) {
-			echo "<div class='updated'><p>" . $this->message . "</p></div>";
-		}
-		else {
-			echo "<div class='error'><p>" . $this->message . "</p></div>";
+			for ( $row = 2; $row <= (int) $sheet->getHighestRow(); $row++ ) {
+				$this->import_row( $sheet, $row, $headers, $field_headers );
+			}
+		} finally {
+			if ( method_exists( $spreadsheet, 'disconnectWorksheets' ) ) {
+				$spreadsheet->disconnectWorksheets();
+			}
+			unset( $spreadsheet );
 		}
 	}
 
+	private function read_headers( $sheet ) {
+		$highest = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString( $sheet->getHighestColumn() );
+		$headers = array();
+		for ( $column = 1; $column <= $highest; $column++ ) {
+			$header = trim( sanitize_text_field( (string) $sheet->getCellByColumnAndRow( $column, 1 )->getValue() ) );
+			if ( '' === $header || isset( $headers[ $header ] ) ) {
+				throw new UnexpectedValueException( 'invalid_headers' );
+			}
+			$headers[ $header ] = $column;
+		}
+		if ( ! isset( $headers['Title'], $headers['Price'] ) ) {
+			throw new UnexpectedValueException( 'missing_required_headers' );
+		}
+		return $headers;
+	}
+
+	private function import_row( $sheet, $row, $headers, $field_headers ) {
+		$title = sanitize_text_field( $this->restore_export_value( (string) $sheet->getCellByColumnAndRow( $headers['Title'], $row )->getValue() ) );
+		if ( '' === $title ) return;
+
+		$post = array(
+			'post_title'   => $title,
+			'post_content' => isset( $headers['Description'] ) ? wp_kses_post( $this->restore_export_value( (string) $sheet->getCellByColumnAndRow( $headers['Description'], $row )->getValue() ) ) : '',
+			'post_status'  => 'publish',
+			'post_type'    => FDM_MENUITEM_POST_TYPE,
+		);
+
+		if ( isset( $headers['ID'] ) ) {
+			$raw_id = trim( (string) $sheet->getCellByColumnAndRow( $headers['ID'], $row )->getValue() );
+			if ( '' !== $raw_id ) {
+				$post_id = absint( $raw_id );
+				if ( ! $post_id || FDM_MENUITEM_POST_TYPE !== get_post_type( $post_id ) ) throw new DomainException( 'invalid_target' );
+				$post['ID'] = $post_id;
+			}
+		}
+
+		$raw_prices = trim( $this->restore_export_value( (string) $sheet->getCellByColumnAndRow( $headers['Price'], $row )->getValue() ) );
+		$prices = array();
+		foreach ( '' === $raw_prices ? array() : explode( ';', $raw_prices ) as $price ) {
+			$price = trim( wp_strip_all_tags( $price ) );
+			if ( '' === $price || strlen( $price ) > 100 || preg_match( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $price ) ) throw new DomainException( 'invalid_price' );
+			$prices[] = $price;
+		}
+
+		// Resolve every supplied section before changing this row's post or metadata.
+		$section_ids = isset( $headers['Sections'] )
+			? $this->resolve_section_references( $this->restore_export_value( (string) $sheet->getCellByColumnAndRow( $headers['Sections'], $row )->getValue() ) )
+			: null;
+
+		$result = isset( $post['ID'] ) ? wp_update_post( $post, true ) : wp_insert_post( $post, true );
+		if ( is_wp_error( $result ) || ! $result ) throw new DomainException( 'post_write_failed' );
+
+		delete_post_meta( $result, 'fdm_item_price' );
+		foreach ( array_slice( $prices, 0, 20 ) as $price ) add_post_meta( $result, 'fdm_item_price', $price );
+
+		if ( null !== $section_ids ) wp_set_object_terms( $result, $section_ids, 'fdm-menu-section' );
+
+		$custom_values = array();
+		foreach ( $field_headers as $header => $field ) {
+			if ( ! isset( $headers[ $header ] ) || 'section' === $field->type ) continue;
+			$value = $this->restore_export_value( $sheet->getCellByColumnAndRow( $headers[ $header ], $row )->getValue() );
+			if ( 'checkbox' === $field->type ) {
+				$custom_values[ $field->slug ] = array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'trim', explode( ',', (string) $value ) ) ) ) );
+			} elseif ( 'textarea' === $field->type ) {
+				$custom_values[ $field->slug ] = sanitize_textarea_field( (string) $value );
+			} else {
+				$custom_values[ $field->slug ] = sanitize_text_field( (string) $value );
+			}
+		}
+		update_post_meta( $result, '_fdm_menu_item_custom_fields', $custom_values );
+	}
+
+	private function resolve_section_references( $value ) {
+		$section_ids = array();
+		foreach ( explode( ',', $value ) as $section ) {
+			$section = trim( $section );
+			if ( '' === $section ) continue;
+			$section = sanitize_text_field( $section );
+			if ( '' === $section ) throw new DomainException( 'invalid_section' );
+			if ( ctype_digit( $section ) ) {
+				$term = get_term( absint( $section ), 'fdm-menu-section' );
+			} else {
+				// Exact names take precedence over slugs, including formula-leading names.
+				$term = get_term_by( 'name', $section, 'fdm-menu-section' );
+				if ( ! $term ) $term = get_term_by( 'slug', $section, 'fdm-menu-section' );
+			}
+			if ( ! ( $term instanceof WP_Term ) ) throw new DomainException( 'invalid_section' );
+			$section_ids[] = (int) $term->term_id;
+		}
+		return array_values( array_unique( $section_ids ) );
+	}
+
+	private function restore_export_value( $value ) {
+		$value = (string) $value;
+		return preg_match( "/^'[[:space:]]*[=+\-@]/u", $value ) ? substr( $value, 1 ) : $value;
+	}
+
+	private function load_spreadsheet_library() {
+		if ( ! class_exists( '\\PhpOffice\\PhpSpreadsheet\\IOFactory' ) ) require_once FDM_PLUGIN_DIR . '/lib/PHPSpreadsheet/vendor/autoload.php';
+	}
+
+	private function redirect_with_notice( $notice ) {
+		wp_safe_redirect( add_query_arg( 'fdm_import_notice', sanitize_key( $notice ), admin_url( 'edit.php?post_type=fdm-menu&page=fdm-import' ) ) );
+		exit;
+	}
 }
-
-
+}

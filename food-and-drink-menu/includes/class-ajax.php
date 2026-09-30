@@ -97,9 +97,17 @@ class fdmAjax {
 			'quantity' 			=> isset( $_POST['quantity'] ) ? intval( $_POST['quantity'] ) : 1 
 		);
 
-		$fdm_controller->cart->add_item( $args );
+		$cart_item = $fdm_controller->cart->add_item( $args );
+		if ( is_wp_error( $cart_item ) ) {
+			wp_send_json_error(
+				array(
+					'error' => $cart_item->get_error_code(),
+					'msg'   => $cart_item->get_error_message(),
+				)
+			);
+		}
 
-		$item = new fdmViewItem( $args );
+		$item = new fdmViewItem( get_object_vars( $cart_item ) );
 		$output = $item->cart_render();
 
 		echo $output;
@@ -126,12 +134,10 @@ class fdmAjax {
 			'quantity' 			=> isset( $_POST['selected_quantity'] ) ? intval( $_POST['selected_quantity'] ) : 1 
 		);
 
-		if ( empty( $args['selected_price'] ) ) {
-
-			$prices 		= (array) get_post_meta( $args['id'], 'fdm_item_price' );
-			$price_discount = get_post_meta( $args['id'], 'fdm_item_price_discount', true );
-
-			$args['selected_price'] = $price_discount ? $price_discount : reset( $prices );
+		$pricing = new fdmOrderPricing();
+		$args = $pricing->resolve_item( $args );
+		if ( is_wp_error( $args ) ) {
+			wp_send_json_error( array( 'error' => $args->get_error_code(), 'msg' => $args->get_error_message() ) );
 		}
 
 		$order_content = get_post_field( 'post_content', $order_id );
@@ -264,40 +270,52 @@ class fdmAjax {
 	public function submit_order() {
 		global $fdm_controller;
 
-		if ( ! check_ajax_referer( 'fdm-ordering', 'nonce', false ) and ! check_ajax_referer( 'fdm-paypal-payment', 'nonce', false ) and ! check_ajax_referer( 'fdm-stripe-payment', 'nonce', false ) ) {
-			fdmHelper::bad_nonce_ajax();
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		$payment_path = $this->resolve_order_payment_path( $nonce );
+		if ( is_wp_error( $payment_path ) ) {
+			if ( 'fdm_bad_nonce' === $payment_path->get_error_code() ) fdmHelper::bad_nonce_ajax();
+			wp_send_json_error( array( 'error' => $payment_path->get_error_code(), 'msg' => $payment_path->get_error_message() ), 400 );
 		}
 
 		$args = array(
-			'permalink' 	=> sanitize_url( $_POST['permalink'] ),
-			'name' 			=> sanitize_text_field( $_POST['name'] ),
-			'email'			=> sanitize_text_field( $_POST['email'] ),
-			'phone'			=> sanitize_text_field( $_POST['phone'] ),
-			'note' 			=> sanitize_text_field( $_POST['note'] ),
-			'pickup_time'	=> sanitize_text_field( $_POST['pickup_time'] ),
-			'delivery'		=> sanitize_text_field( $_POST['delivery'] ),
-			'tip_amount'	=> sanitize_text_field( $_POST['tip_amount'] ),
-			'discount_code'	=> sanitize_text_field( $_POST['discount_code'] ),
+			'permalink' 	=> isset( $_POST['permalink'] ) ? sanitize_url( wp_unslash( $_POST['permalink'] ) ) : '',
+			'name' 			=> isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
+			'email'			=> isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '',
+			'phone'			=> isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '',
+			'note' 			=> isset( $_POST['note'] ) ? sanitize_text_field( wp_unslash( $_POST['note'] ) ) : '',
+			'pickup_time'	=> isset( $_POST['pickup_time'] ) ? sanitize_text_field( wp_unslash( $_POST['pickup_time'] ) ) : '',
+			'delivery'		=> isset( $_POST['delivery'] ) ? sanitize_key( wp_unslash( $_POST['delivery'] ) ) : '',
+			'tip_amount'	=> isset( $_POST['tip_amount'] ) ? sanitize_text_field( wp_unslash( $_POST['tip_amount'] ) ) : '0',
+			'discount_code'	=> isset( $_POST['discount_code'] ) ? sanitize_text_field( wp_unslash( $_POST['discount_code'] ) ) : '',
+			'payment_path'  => $payment_path,
 			'custom_fields' => array()
 		);
 
 		if( isset( $_POST['custom_fields'] ) and is_array( $_POST['custom_fields'] ) ) {
 			$args['custom_fields'] = $_POST['custom_fields'];
 			array_walk_recursive( $args['custom_fields'], function( &$item, $idx ) {
-				$item = sanitize_text_field( $item );
+				$item = sanitize_text_field( wp_unslash( $item ) );
 			} );
-		}
-
-		if ( isset( $_POST['post_status'] ) ) {
-			$args['post_status'] = sanitize_text_field( $_POST['post_status'] );
 		}
 
 		$order_id = $fdm_controller->orders->submit_order( $args );
 
-		if ( $order_id ) {
+		if ( is_wp_error( $order_id ) ) {
+			wp_send_json_error(
+				array(
+					'error' => $order_id->get_error_code(),
+					'msg'   => $order_id->get_error_message(),
+				)
+			);
+		}
+		elseif ( $order_id ) {
+			$order = new fdmOrderItem();
+			$order->load( $order_id );
 			wp_send_json_success(
 				array(
-					'order_id'	=> $order_id
+					'order_id'    => $order_id,
+					'order_total' => $order->order_total,
+					'currency'    => $order->order_currency,
 				)
 			);
 		}
@@ -309,6 +327,35 @@ class fdmAjax {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Resolve the only permitted order path from server settings and a path-specific nonce.
+	 */
+	public function resolve_order_payment_path( $nonce ) {
+		global $fdm_controller;
+
+		$is_ordering = (bool) wp_verify_nonce( $nonce, 'fdm-ordering' );
+		$is_paypal = (bool) wp_verify_nonce( $nonce, 'fdm-paypal-payment' );
+		$is_stripe = (bool) wp_verify_nonce( $nonce, 'fdm-stripe-payment' );
+		if ( ! $is_ordering && ! $is_paypal && ! $is_stripe ) {
+			return new WP_Error( 'fdm_bad_nonce', __( 'The order request could not be verified.', 'food-and-drink-menu' ) );
+		}
+
+		$payment_enabled = (bool) $fdm_controller->settings->get_setting( 'enable-payment' );
+		$payment_optional = (bool) $fdm_controller->settings->get_setting( 'payment-optional' );
+		$gateway = sanitize_key( (string) $fdm_controller->settings->get_setting( 'ordering-payment-gateway' ) );
+		$expected_gateway = ( 'stripe' === $gateway && $is_stripe ) || ( 'paypal' === $gateway && $is_paypal );
+
+		if ( ! $payment_enabled ) {
+			return $is_ordering ? 'none' : new WP_Error( 'fdm_payment_path_unavailable', __( 'Online payment is not enabled for this order.', 'food-and-drink-menu' ) );
+		}
+		if ( $is_paypal || $is_stripe ) {
+			return $expected_gateway ? 'online' : new WP_Error( 'fdm_payment_gateway_mismatch', __( 'The selected payment gateway is not available.', 'food-and-drink-menu' ) );
+		}
+		if ( $is_ordering && $payment_optional ) return 'store';
+
+		return new WP_Error( 'fdm_payment_required', __( 'Online payment is required for this order.', 'food-and-drink-menu' ) );
 	}
 
 	public function update_cart_quantities() {

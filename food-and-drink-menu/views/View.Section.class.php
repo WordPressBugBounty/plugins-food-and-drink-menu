@@ -24,6 +24,36 @@ class fdmViewSection extends fdmView {
 
 	// The items being displayed in this section
 	public $items;
+	public $item_posts = null;
+
+	const QUERY_BATCH_SIZE = 200;
+
+	/** Fetch menu items once in bounded batches and group them by section. */
+	public static function fetch_item_posts( $section_ids ) {
+		$section_ids = array_values( array_unique( array_filter( array_map( 'absint', (array) $section_ids ) ) ) );
+		$grouped = array_fill_keys( $section_ids, array() );
+		if ( ! $section_ids ) return $grouped;
+		$page = 1;
+		do {
+			$query = new WP_Query( array(
+				'post_type' => FDM_MENUITEM_POST_TYPE, 'post_status' => 'publish',
+				'posts_per_page' => self::QUERY_BATCH_SIZE, 'paged' => $page++,
+				'order' => 'ASC', 'orderby' => 'menu_order title', 'no_found_rows' => true,
+				'tax_query' => array( array( 'taxonomy' => 'fdm-menu-section', 'field' => 'term_id', 'terms' => $section_ids ) ),
+			) );
+			$posts = $query->posts;
+			$posts_by_id = array();
+			foreach ( $posts as $post ) $posts_by_id[ $post->ID ] = $post;
+			$relationships = wp_get_object_terms( array_keys( $posts_by_id ), 'fdm-menu-section', array( 'fields' => 'all_with_object_id' ) );
+			if ( ! is_wp_error( $relationships ) ) foreach ( $relationships as $relationship ) {
+				$section_id = (int) $relationship->term_id;
+				$object_id = (int) $relationship->object_id;
+				if ( isset( $grouped[ $section_id ], $posts_by_id[ $object_id ] ) ) $grouped[ $section_id ][] = $posts_by_id[ $object_id ];
+			}
+		} while ( self::QUERY_BATCH_SIZE === count( $posts ) );
+		wp_reset_postdata();
+		return $grouped;
+	}
 
 	/**
 	 * Initialize the class
@@ -103,27 +133,19 @@ class fdmViewSection extends fdmView {
 			return;
 		}
 
-		// Make sure the section has posts before we load the data.
-		$items = new WP_Query( array(
-			'post_type'      	=> 'fdm-menu-item',
-			'posts_per_page' 	=> -1,
-			'order'				=> 'ASC',
-			'orderby'			=> 'menu_order title',
-			'tax_query'     	=> array(
-				array(
-					'taxonomy' => 'fdm-menu-section',
-					'field'    => 'term_id',
-					'terms'    => $this->id,
-				),
-			),
-		));
-		if ( !count( $items->posts ) ) {
+		if ( is_array( $this->item_posts ) ) {
+			$item_posts = $this->item_posts;
+		} else {
+			$grouped = self::fetch_item_posts( array( $this->id ) );
+			$item_posts = isset( $grouped[ $this->id ] ) ? $grouped[ $this->id ] : array();
+		}
+		if ( ! count( $item_posts ) ) {
 			return;
 		}
 
 		// We go ahead and store all the posts data now to save on db calls
 		$this->items = array();
-		foreach( $items->posts as $item ) {
+		foreach( $item_posts as $item ) {
 			$item = new fdmViewItem(
 				array(
 					'id' => $item->ID,

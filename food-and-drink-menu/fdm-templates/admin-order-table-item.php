@@ -2,7 +2,7 @@
 	<td>
 		<a href='<?php echo esc_attr( $this->get_admin_item_delete_url() ); ?>'><?php _e( 'Delete?', 'food-and-drink-menu' ); ?></a>
 	</td> 
-	<td><?php echo esc_html( get_the_title( $this->current_order_item->id ) ); ?></td>
+	<td><?php echo esc_html( fdm_get_order_item_title( $this->current_order_item ) ); ?></td>
 	<td><?php echo esc_html( $this->current_order_item->quantity ); ?></td>
 	<td><?php echo esc_html( fdm_calculate_admin_price( $this->current_order_item ) ); ?></td>
 	<td>

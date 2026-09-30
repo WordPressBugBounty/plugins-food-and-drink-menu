@@ -10,6 +10,7 @@ if ( !class_exists( 'fdmCartManager' ) ) {
 class fdmCartManager {
 
 	private $cart_items = array();
+	private $validation_errors = array();
 
 	public function __construct() {
 		
@@ -18,19 +19,32 @@ class fdmCartManager {
 
 	public function load_cart_from_cookie() {
 		
-		$fdm_cart_items = isset( $_COOKIE['fdm_cart'] ) ? (array) json_decode( $_COOKIE['fdm_cart'] ) : array();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON is decoded, type-checked, and every consumed field is sanitized and re-priced below.
+		$cookie = isset( $_COOKIE['fdm_cart'] ) ? wp_unslash( $_COOKIE['fdm_cart'] ) : '';
+		$fdm_cart_items = $cookie ? (array) json_decode( $cookie, true ) : array();
 		
 		if ( ! is_array( $fdm_cart_items ) ) { return; }
 
+		$pricing = new fdmOrderPricing();
 		foreach ( $fdm_cart_items as $fdm_cart_item ) {
+			if ( ! is_array( $fdm_cart_item ) ) { continue; }
 
-			if ( ! is_object( $fdm_cart_item ) ) { continue; }
+			$resolved = $pricing->resolve_item(
+				array(
+					'id'               => isset( $fdm_cart_item['id'] ) ? absint( $fdm_cart_item['id'] ) : 0,
+					'item_identifier'  => isset( $fdm_cart_item['item_identifier'] ) ? sanitize_text_field( $fdm_cart_item['item_identifier'] ) : '',
+					'selected_options' => isset( $fdm_cart_item['selected_options'] ) && is_array( $fdm_cart_item['selected_options'] ) ? array_map( 'sanitize_text_field', $fdm_cart_item['selected_options'] ) : array(),
+					'selected_price'   => isset( $fdm_cart_item['selected_price'] ) ? sanitize_text_field( $fdm_cart_item['selected_price'] ) : '',
+					'note'             => isset( $fdm_cart_item['note'] ) ? sanitize_text_field( $fdm_cart_item['note'] ) : '',
+					'quantity'         => isset( $fdm_cart_item['quantity'] ) ? absint( $fdm_cart_item['quantity'] ) : 1,
+				)
+			);
+			if ( is_wp_error( $resolved ) ) {
+				$this->validation_errors[] = $resolved;
+				continue;
+			}
 
-			$fdm_cart_item = ( array ) $fdm_cart_item;
-
-			array_walk( $fdm_cart_item, 'sanitize_text_field' );
-
-			$this->cart_items[ $fdm_cart_item['item_identifier'] ] = new fdmCartItem( $fdm_cart_item );
+			$this->cart_items[ $resolved['item_identifier'] ] = new fdmCartItem( $resolved );
 		}
 	}
 
@@ -39,27 +53,28 @@ class fdmCartManager {
 		return $this->cart_items;
 	}
 
+	public function get_validation_errors() {
+		return $this->validation_errors;
+	}
+
 	public function add_item( $item = array() ) {
-		
-		if ( ! isset( $item['id'] ) or ! is_numeric( $item['id'] ) ) { return false; }
-		if ( ! isset( $item['item_identifier'] ) ) { return false; }
 
-		if ( empty( $item['selected_price'] ) ) {
-
-			$prices 		= (array) get_post_meta( $item['id'], 'fdm_item_price' );
-			$price_discount = get_post_meta( $item['id'], 'fdm_item_price_discount', true );
-
-			$item['selected_price'] = $price_discount ? $price_discount : reset( $prices );
-		}
+		$pricing = new fdmOrderPricing();
+		$item = $pricing->resolve_item( $item );
+		if ( is_wp_error( $item ) ) { return $item; }
 
 		$this->cart_items[ $item['item_identifier'] ] = new fdmCartItem( $item );
 
 		$this->update_cookie();
+
+		return $this->cart_items[ $item['item_identifier'] ];
 	}
 
 	public function update_item( $item = array() ) {
 		
 		if ( ! isset( $item['item_identifier'] ) ) { return false; }
+
+		if ( empty( $this->cart_items[ $item['item_identifier'] ] ) ) { return false; }
 
 		$this->cart_items[ $item['item_identifier'] ]->update( $item );
 
@@ -90,14 +105,34 @@ class fdmCartManager {
 
 	public function update_cookie() {
 		
-		setcookie( 'fdm_cart', json_encode( $this->cart_items ), time() + 4*3600, '/' );
+		setcookie(
+			'fdm_cart',
+			wp_json_encode( $this->cart_items ),
+			array(
+				'expires'  => time() + 4 * HOUR_IN_SECONDS,
+				'path'     => '/',
+				'secure'   => is_ssl(),
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
 	}
 
 	public function clear_cart() {
 		
 		if ( isset( $_COOKIE['fdm_cart'] ) ) { unset( $_COOKIE['fdm_cart'] ); }
 
-		setcookie( 'fdm_cart', json_encode( $this->cart_items ), time() - 1, '/' );
+		setcookie(
+			'fdm_cart',
+			'',
+			array(
+				'expires'  => time() - HOUR_IN_SECONDS,
+				'path'     => '/',
+				'secure'   => is_ssl(),
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
 	}
 }
 } // endif

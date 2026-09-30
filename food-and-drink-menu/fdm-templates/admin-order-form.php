@@ -422,7 +422,7 @@
 	
 			</div>
 
-			<?php $fields = $fdm_controller->settings->get_ordering_custom_fields(); ?>
+			<?php $fields = fdm_get_order_custom_field_snapshots( $this->order ); ?>
 
 			<?php if ( ! empty( $fields ) ) { ?>
 
@@ -433,8 +433,9 @@
 					<div class="fdm-dashboard-new-widget-box-bottom">
 	
 						<?php foreach ( $fields as $field ) { ?>
+							<?php $field = (object) $field; $field->name = isset( $field->label ) ? $field->label : $field->slug; ?>
 
-							<?php $field_value = ! empty( $this->order->custom_fields[ $field->slug ] ) ? $this->order->custom_fields[ $field->slug ]  : ''; ?>
+							<?php $field_value = isset( $field->value ) ? $field->value : ''; ?>
 
 							<div class='fdm-ordering-custom-field'>
 	
@@ -454,7 +455,7 @@
 					
 										<select name='<?php echo esc_attr( $field->slug ); ?>'>
 					
-											<?php $field_values = explode( ",", $field->values ); ?>
+											<?php $field_values = explode( ",", isset( $field->values ) ? $field->values : '' ); ?>
 					
 											<?php foreach ( $field_values as $value ) { ?>
 												<option <?php echo ( sanitize_title( $value ) == $field_value ? 'selected' : '' ); ?> value='<?php echo esc_attr( sanitize_title( $value ) ); ?>' ><?php echo esc_html( $value ); ?></option>
@@ -464,12 +465,12 @@
 					
 									<?php elseif ( $field->type == 'checkbox' ) : ?>
 					
-										<?php $field_values = explode( ",", $field->values ); ?>
+										<?php $field_values = explode( ",", isset( $field->values ) ? $field->values : '' ); ?>
 
 										<?php $field_value = is_array( $field_value ) ? $field_value : array(); ?>
 					
 										<?php foreach ( $field_values as $value ) { ?>
-											<input type='checkbox' <?php echo ( in_array( $value, $field_value ) ? 'selected' : '' ); ?> name='<?php echo esc_attr( $field->slug ); ?>[]' value='<?php echo esc_attr( sanitize_title( $value ) ); ?>' /><?php echo esc_html( $value );?><br />
+											<input type='checkbox' <?php checked( in_array( sanitize_title( $value ), $field_value, true ) || in_array( $value, $field_value, true ) ); ?> name='<?php echo esc_attr( $field->slug ); ?>[]' value='<?php echo esc_attr( sanitize_title( $value ) ); ?>' /><?php echo esc_html( $value );?><br />
 										<?php } ?>
 
 									<?php else : ?>

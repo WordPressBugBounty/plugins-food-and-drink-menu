@@ -10,7 +10,7 @@
 
 <?php
 if ( $this->ordering_display_progress() and $fdm_controller->orders->is_open_for_ordering() ) :
-	echo wp_kses( $this->print_order_progress(), $this->allowed_tags );
+	echo wp_kses( (string) $this->print_order_progress(), $this->allowed_tags );
 endif;
 ?>
 
@@ -38,7 +38,7 @@ if ($this->ordering_enabled() and $fdm_controller->orders->is_open_for_ordering(
 endif;
 ?>
 
-<ul id="<?php echo esc_attr( fdm_global_unique_id() ); ?>"<?php echo fdm_format_classes( $this->classes ); ?>>
+<ul id="<?php echo esc_attr( $this->render_instance_id ); ?>"<?php echo fdm_format_classes( $this->classes ); ?>>
 
 <?php foreach ( $this->groups as $group ) :	?>
 
@@ -58,7 +58,7 @@ endif;
 <?php endif; ?>
 
 <?php if ( $fdm_controller->settings->get_setting( 'fdm-enable-price-filtering' ) ) { ?>
-	<div id='fdm-pricing-info' data-min_price='<?php echo esc_attr( $this->min_price ); ?>' data-max_price='<?php echo esc_attr( $this->max_price ); ?>' data-currency_symbol_location='<?php echo esc_attr( $this->get_option( 'fdm-currency-symbol-location' ) ); ?>' data-currency_symbol='<?php echo esc_attr( $this->get_option( 'fdm-currency-symbol' ) ); ?>'></div>
+	<div class='fdm-pricing-info' data-menu-id='<?php echo esc_attr( $this->id ); ?>' data-min_price='<?php echo esc_attr( $this->min_price ); ?>' data-max_price='<?php echo esc_attr( $this->max_price ); ?>' data-currency_symbol_location='<?php echo esc_attr( $this->get_option( 'fdm-currency-symbol-location' ) ); ?>' data-currency_symbol='<?php echo esc_attr( $this->get_option( 'fdm-currency-symbol' ) ); ?>'></div>
 <?php } ?>
 
 </div> <!-- fdm-the-menu -->

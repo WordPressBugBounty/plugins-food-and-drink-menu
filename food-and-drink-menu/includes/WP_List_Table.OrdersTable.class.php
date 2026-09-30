@@ -464,13 +464,12 @@ class fdmOrdersTable extends WP_List_Table {
 
 				$value = '';
 
-				$custom_fields = $fdm_controller->settings->get_ordering_custom_fields();
+				$custom_fields = fdm_get_order_custom_field_snapshots( $order );
 
 				foreach ( $custom_fields as $custom_field ) {
-
-					if ( empty( $order->custom_fields[ $custom_field->slug ] ) ) { continue; }
-
-					$value .= $custom_field->name . ': ' . ( is_array( $order->custom_fields[ $custom_field->slug ] ) ? implode( ',', $order->custom_fields[ $custom_field->slug ] ) : esc_html( $order->custom_fields[ $custom_field->slug ] ) ) . '<br />';
+					$field_value = isset( $custom_field['value'] ) ? $custom_field['value'] : '';
+					if ( '' === $field_value || false === $field_value || array() === $field_value ) continue;
+					$value .= esc_html( $custom_field['label'] ) . ': ' . ( is_array( $field_value ) ? esc_html( implode( ',', $field_value ) ) : esc_html( $field_value ) ) . '<br />';
 				}
 				
 				break;

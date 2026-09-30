@@ -79,14 +79,9 @@ class fdmAdminOrderFormView extends fdmView {
 	 */
 	public function print_selected_order_option() {
 
-		$ordering_options = get_post_meta( $this->current_order_item->id, '_fdm_ordering_options', true );
-		$ordering_options = is_array( $ordering_options ) ? $ordering_options : array();
-
-		foreach( $this->current_order_item->selected_options as $selected_option ) {
-
-			if ( ! array_key_exists( $selected_option, $ordering_options ) ) { continue; }
-
-			echo '<li>' . esc_html( $ordering_options[ $selected_option ]['name'] ) . ' (' . fdm_format_price( $ordering_options[ $selected_option ]['cost'] ) . ')' . '</li>';
+		foreach ( fdm_get_order_item_option_snapshots( $this->current_order_item ) as $option ) {
+			$cost = isset( $option['cost'] ) && is_numeric( $option['cost'] ) ? ' (' . fdm_format_price( $option['cost'] ) . ')' : '';
+			echo '<li>' . esc_html( $option['name'] ) . esc_html( $cost ) . '</li>';
 		}
 	}
 }
