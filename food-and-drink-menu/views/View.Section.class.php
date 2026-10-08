@@ -38,17 +38,25 @@ class fdmViewSection extends fdmView {
 			$query = new WP_Query( array(
 				'post_type' => FDM_MENUITEM_POST_TYPE, 'post_status' => 'publish',
 				'posts_per_page' => self::QUERY_BATCH_SIZE, 'paged' => $page++,
-				'order' => 'ASC', 'orderby' => 'menu_order title', 'no_found_rows' => true,
+				'order' => 'ASC', 'orderby' => 'menu_order title ID', 'no_found_rows' => true,
 				'tax_query' => array( array( 'taxonomy' => 'fdm-menu-section', 'field' => 'term_id', 'terms' => $section_ids ) ),
 			) );
 			$posts = $query->posts;
 			$posts_by_id = array();
 			foreach ( $posts as $post ) $posts_by_id[ $post->ID ] = $post;
 			$relationships = wp_get_object_terms( array_keys( $posts_by_id ), 'fdm-menu-section', array( 'fields' => 'all_with_object_id' ) );
+			$sections_by_post = array();
 			if ( ! is_wp_error( $relationships ) ) foreach ( $relationships as $relationship ) {
 				$section_id = (int) $relationship->term_id;
 				$object_id = (int) $relationship->object_id;
-				if ( isset( $grouped[ $section_id ], $posts_by_id[ $object_id ] ) ) $grouped[ $section_id ][] = $posts_by_id[ $object_id ];
+				if ( isset( $grouped[ $section_id ], $posts_by_id[ $object_id ] ) ) $sections_by_post[ $object_id ][ $section_id ] = true;
+			}
+			// Relationship queries do not preserve the WP_Query item order.
+			// Group by membership while appending posts in their saved order.
+			foreach ( $posts as $post ) {
+				foreach ( isset( $sections_by_post[ $post->ID ] ) ? $sections_by_post[ $post->ID ] : array() as $section_id => $member ) {
+					$grouped[ $section_id ][] = $post;
+				}
 			}
 		} while ( self::QUERY_BATCH_SIZE === count( $posts ) );
 		wp_reset_postdata();

@@ -40,7 +40,7 @@ class fdmViewFiltering extends fdmView {
 		$this->load_filtering();
 
 		if ( empty( $this->text_search ) && ! $this->enable_price_filtering && ! $this->enable_sorting && ! $this->enable_section_filtering )  {
-			return;
+			return '';
 		}
 
 		// Add any dependent stylesheets or javascript

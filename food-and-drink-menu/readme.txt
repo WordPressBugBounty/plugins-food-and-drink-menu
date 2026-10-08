@@ -5,7 +5,7 @@ Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -301,6 +301,9 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.6.1 (2026-10-08) =
+- Fixed an issue causing menu items to not use the order set for them.
 
 = 2.6.0 (2026-09-30) =
 - **IMPORTANT NOTE: This is a major update with several big changes. We suggest testing this update in a staging or development environment before updating your live environment. Or wait a few days before updating in the event that an issue is identified that requires a fix/new update.**
