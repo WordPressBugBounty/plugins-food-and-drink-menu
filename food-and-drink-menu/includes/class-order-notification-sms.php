@@ -90,9 +90,7 @@ class fdmOrderNotificationSMS extends fdmOrderNotification {
 	 */
 	public function set_license_key() {
 
-		if ( ! get_option( 'fdm-ultimate-license-key' ) ) { add_option( 'fdm-ultimate-license-key', 'no_license_key_entered' ); }
-
-		$this->license_key = get_option( 'fdm-ultimate-license-key' );
+		$this->license_key = function_exists( 'fspph_fdm_ultimate_service_key' ) ? fspph_fdm_ultimate_service_key() : '';
 
 	}
 

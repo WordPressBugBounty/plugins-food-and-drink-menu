@@ -39,6 +39,7 @@ class fdmMenuAuthoring {
 		?>
 		<div class="wrap fdm-reorder-wrap">
 			<h1><?php esc_html_e( 'Reorder Menu Items', 'food-and-drink-menu' ); ?></h1>
+			<div class="notice notice-warning"><p><strong><?php esc_html_e( 'Saving this page overwrites the existing order of every menu item, including any Order values you set manually on the Menu Items screen or in the item editor. The new order applies to all menus. Your previous manual order will not be retained.', 'food-and-drink-menu' ); ?></strong></p></div>
 			<p><?php esc_html_e( 'Item order is global and applies anywhere the item appears.', 'food-and-drink-menu' ); ?></p>
 			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only success flag emitted by the nonce-protected save redirect. ?>
 			<?php if ( isset( $_GET['fdm-order-updated'] ) ) : ?><div class="notice notice-success"><p role="status"><?php esc_html_e( 'Menu item order saved.', 'food-and-drink-menu' ); ?></p></div><?php endif; ?>

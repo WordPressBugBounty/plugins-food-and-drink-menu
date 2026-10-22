@@ -246,36 +246,15 @@ function fdm_calculate_admin_price( $order_item ) {
  * @since 2.1
  */
 function fdm_possible_order_status_update() {
-
-	if ( isset( $_GET['fdm_action'] ) and $_GET['fdm_action'] == 'update_status' and current_user_can( 'manage_fdm_orders' ) ) {
-		
-		$id 		= intval( $_GET['order_id'] );
-		$status 	= sanitize_text_field( $_GET['status'] );
-
-		$order_statuses = fdm_get_order_statuses();
-
-		$order_data = get_post_meta( $id, 'order_data', true );
-
-		if ( array_key_exists( $status, $order_statuses ) ) {
-			$post_id = wp_update_post( array( 'ID' => $id, 'post_status' => $status ) );
-
-			if ( $post_id ) {
-				echo '<div class="fdm-post-status-update">';
-				echo __( 'Order status has been set to ', 'food-and-drink-menu' ) . $order_statuses[ $status ]['label'];
-				echo '</div>';
-			}
-		}
-		else {
-			echo '<div class="fdm-post-status-update">';
-			echo __( 'Order status could not be updated. Please make sure you\'re logged in and that the status exists.', 'food-and-drink-menu' );
-			echo '</div>';
-		}	
+	if ( ! isset( $_GET['fdm_action'] ) || 'update_status' !== $_GET['fdm_action'] ) return;
+	if ( ! current_user_can( 'manage_fdm_orders' ) ) {
+		echo '<div role="alert">' . esc_html__( 'Log in as an authorized staff member to review this order.', 'food-and-drink-menu' ) . '</div>'; return;
 	}
-	elseif ( isset( $_GET['fdm_action'] ) and $_GET['fdm_action'] == 'update_status' ) {
-		echo '<div class="fdm-post-status-update">';
-		echo __( 'You do not have permission to update the order\'s status. Please make sure you\'re logged in.', 'food-and-drink-menu' );
-		echo '</div>';
-	}
+	$id = absint( $_GET['order_id'] ?? 0 );
+	$post = get_post( $id );
+	if ( ! $post || FDM_ORDER_POST_TYPE !== $post->post_type ) return;
+	$url = add_query_arg( array( 'page' => 'fdm-add-edit-order', 'order_id' => $id ), admin_url( 'admin.php' ) );
+	echo '<div role="status"><a href="' . esc_url( $url ) . '">' . esc_html__( 'Review the order and confirm its status update.', 'food-and-drink-menu' ) . '</a></div>';
 }
 
 /**

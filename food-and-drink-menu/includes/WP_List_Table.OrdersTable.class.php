@@ -363,6 +363,10 @@ class fdmOrdersTable extends WP_List_Table {
 			'cb'        	=> '<input type="checkbox" />', //Render a checkbox instead of text\
 			'id' 			=> __( 'ID', 'food-and-drink-menu' ),
 			'status' 		=> __( 'Status', 'food-and-drink-menu' ),
+			'age' => __( 'Age', 'food-and-drink-menu' ),
+			'fulfillment' => __( 'Fulfillment / table', 'food-and-drink-menu' ),
+			'eta' => __( 'ETA', 'food-and-drink-menu' ),
+			'payment_state' => __( 'Payment', 'food-and-drink-menu' ),
 			'date'   		=> __( 'Date', 'food-and-drink-menu' ),
 			'name'   		=> __( 'Name', 'food-and-drink-menu' ),
 			'email'  		=> __( 'Email', 'food-and-drink-menu' ),
@@ -418,6 +422,10 @@ class fdmOrdersTable extends WP_List_Table {
 		global $fdm_controller;
 
 		switch ( $column_name ) {
+			case 'age': $value = human_time_diff( strtotime( $order->post->post_date_gmt . ' UTC' ), time() ); break;
+			case 'fulfillment': $value = esc_html( $order->fulfillment_mode . ( $order->table_label ? ' / ' . $order->table_label : '' ) ); break;
+			case 'eta': $value = esc_html( $order->estimated_time ); break;
+			case 'payment_state': $value = esc_html( 'hold-placed' === ( $order->stripe_payment_hold_status ?? '' ) ? __( 'On hold', 'food-and-drink-menu' ) : ( $order->receipt_id ? __( 'Paid', 'food-and-drink-menu' ) : __( 'Pay at restaurant', 'food-and-drink-menu' ) ) ); break;
 
 			case 'date' :
 
@@ -432,6 +440,13 @@ class fdmOrdersTable extends WP_List_Table {
 					
 					$value .= '<div class="actions">';
 					$value .= '<a href="admin.php?page=fdm-add-edit-order&order_id=' . $order->id . '" data-id="' . esc_attr( $order->id ) . '">' . __( 'Edit', 'order-tracking' ) . '</a>';
+					$next = array( 'fdm_order_received' => 'accepted', 'fdm_order_accepted' => 'preparing', 'fdm_order_preparing' => 'ready' );
+					if ( isset( $next[ $order->post_status ] ) ) {
+						$value .= ' <input type="hidden" name="fdm_row_nonce[' . absint( $order->id ) . ']" value="' . esc_attr( wp_create_nonce( 'fdm_order_status_' . $order->id ) ) . '">';
+						/* translators: %s: Next order status label. */
+						$next_label = sprintf( __( 'Set to %s', 'food-and-drink-menu' ), fdm_get_order_statuses()[ 'fdm_order_' . $next[ $order->post_status ] ]['label'] );
+						$value .= '<button type="submit" class="button button-small" name="fdm-row-status" value="' . absint( $order->id ) . '">' . esc_html( $next_label ) . '</button>';
+					}
 					$value .= '</div>';
 				}
 
@@ -606,9 +621,9 @@ class fdmOrdersTable extends WP_List_Table {
 	 */
 	public function column_cb( $order ) {
 		return sprintf(
-			'<input type="checkbox" name="%1$s[]" value="%2$s" />',
+			'<input type="checkbox" name="%1$s[]" value="%2$s" /><input type="hidden" name="fdm_expected_status[%2$s]" value="%3$s"><input type="hidden" name="fdm_revision[%2$s]" value="%4$d">',
 			'orders',
-			$order->ID
+			$order->ID, esc_attr( $order->post_status ), (int) get_post_meta( $order->ID, '_fdm_order_status_revision', true )
 		);
 	}
 
@@ -665,6 +680,18 @@ class fdmOrdersTable extends WP_List_Table {
 	 */
 	public function process_bulk_action() {
 		global $fdm_controller;
+		if ( isset( $_POST['fdm-row-status'] ) ) {
+			$id = absint( wp_unslash( $_POST['fdm-row-status'] ) );
+			$nonce = $_POST['fdm_row_nonce'][ $id ] ?? '';
+			if ( ! current_user_can( 'manage_fdm_orders' ) || ! is_string( $nonce ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $nonce ) ), 'fdm_order_status_' . $id ) ) return;
+			$next = array( 'fdm_order_received' => 'fdm_order_accepted', 'fdm_order_accepted' => 'fdm_order_preparing', 'fdm_order_preparing' => 'fdm_order_ready' );
+			$expected = sanitize_key( wp_unslash( $_POST['fdm_expected_status'][ $id ] ?? '' ) );
+			if ( ! isset( $next[ $expected ], $_POST['fdm_revision'][ $id ] ) ) return;
+			$this->action_result = array( $id => $fdm_controller->orders->update_order_status( $id, $next[ $expected ] ) );
+			$this->last_action = 'set-status-' . substr( $next[ $expected ], 10 );
+			add_action( 'fdm_orders_table_top', array( $this, 'admin_notice_bulk_actions' ) );
+			return;
+		}
 
 		$ids    = isset( $_POST['orders'] ) ? $_POST['orders'] : false;
 		$action = isset( $_POST['action'] ) ? sanitize_text_field( $_POST['action'] ) : false;
@@ -682,12 +709,17 @@ class fdmOrdersTable extends WP_List_Table {
 			return;
 		}
 
-		if ( ! current_user_can( 'manage_fdm_orders' ) ) {
+		if ( ! current_user_can( 'manage_fdm_orders' ) || ! $fdm_controller->permissions->check_permission( 'ordering' ) ) {
 			return;
 		}
+		check_admin_referer( 'bulk-' . $this->_args['plural'] );
 
 		$results = array();
 		foreach ( $ids as $id ) {
+			if ( 'delete' !== $action && ! isset( $_POST['fdm_expected_status'][ $id ], $_POST['fdm_revision'][ $id ] ) ) {
+				$results[$id] = new WP_Error( 'fdm_missing_snapshot', __( 'Reload the order list before updating.', 'food-and-drink-menu' ) );
+				continue;
+			}
 			if ( 'delete' === $action ) {
 				$results[$id] = $fdm_controller->orders->delete_order( $id );
 			}
@@ -725,7 +757,7 @@ class fdmOrdersTable extends WP_List_Table {
 	public function process_quicklink_action() {
 		global $fdm_controller;
 
-		if ( empty( $_REQUEST['fdm-quicklink'] ) ) {
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['fdm-quicklink'] ) ) {
 			return;
 		}
 
@@ -735,11 +767,11 @@ class fdmOrdersTable extends WP_List_Table {
 
 		$results = array();
 
-		$id = !empty( $_REQUEST['order'] ) ? intval( $_REQUEST['order'] ) : false;
+		$id = !empty( $_POST['order'] ) ? absint( $_POST['order'] ) : false;
 
-		if ( $_REQUEST['fdm-quicklink'] == 'accept' ) {
-			$results[$id] = $rtb_controller->orders->update_order_status( $id, 'fdm_order_accepted' );
-			$this->last_action = 'set-status-confirmed';
+		if ( 'accept' === $_POST['fdm-quicklink'] && isset( $_POST['_wpnonce'] ) && is_string( $_POST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'fdm_order_status_' . $id ) ) {
+			$results[$id] = $fdm_controller->orders->update_order_status( $id, 'fdm_order_accepted', array( 'expected_status' => 'fdm_order_received', 'revision' => absint( $_POST['revision'] ?? 0 ) ) );
+			$this->last_action = 'set-status-accepted';
 		}
 
 		if( count( $results ) ) {
@@ -791,7 +823,9 @@ class fdmOrdersTable extends WP_List_Table {
 		?>
 
 		<div id="fdm-admin-notice-bulk-<?php esc_attr( $this->last_action ); ?>" class="error">
-			<p><?php echo sprintf( _n( '%d order had errors and could not be processed.', '%d orders had errors and could not be processed.', $failure, 'food-and-drink-menu' ), $failure ); ?></p>
+			<p><?php
+			/* translators: %d: Number of orders whose update failed. */
+			echo esc_html( sprintf( _n( '%d order had errors and could not be processed. Reload the order before updating; backward corrections require a reason on the order page.', '%d orders had errors and could not be processed. Reload the orders before updating; backward corrections require a reason on the order page.', $failure, 'food-and-drink-menu' ), $failure ) ); ?></p>
 		</div>
 
 		<?php
@@ -830,7 +864,7 @@ class fdmOrdersTable extends WP_List_Table {
 		?>
 
 		<div class="tablenav top rtb-top-actions-wrapper">
-			<?php wp_nonce_field( 'bulk-' . $this->args['plural'] ); ?>
+			<?php wp_nonce_field( 'bulk-' . $this->_args['plural'] ); ?>
 			<?php $this->extra_tablenav( $which ); ?>
 		</div>
 
@@ -998,18 +1032,17 @@ class fdmOrdersTable extends WP_List_Table {
 			'post_type'			=> FDM_ORDER_POST_TYPE,
 			'posts_per_page'	=> $this->per_page,
 			'orderby'			=> ! empty( $_GET['orderby'] ) ? sanitize_text_field( $_GET['orderby'] ) : 'date',
-			'order'				=> ! empty( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'ASC',
+			'order'				=> ! empty( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'DESC',
 			'paged'				=> max( ! empty( $_GET['paged'] ) ? intval( $_GET['paged'] ) : 1, 1 ),
 			'post_status'		=> $status
 		);
 
+		$args = apply_filters( 'fdm_orders_table_query_args', $args );
 		$query = new WP_Query( $args );
-
-		$query->args = apply_filters( 'fdm_orders_table_query_args', $query->args ); 
 
 		$this->orders = array();
 
-		foreach ( $query->get_posts() as $order_post ) {
+		foreach ( $query->posts as $order_post ) {
 
 			$order_item = new fdmOrderItem();
 			$order_item->load( $order_post );

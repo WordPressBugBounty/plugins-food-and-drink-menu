@@ -184,6 +184,7 @@ class fdmViewMenu extends fdmView {
 		if ( $template ) {
 			// Own the instance boundary here so existing theme templates inherit it too.
 			echo '<div class="fdm-menu-instance" data-fdm-instance="' . esc_attr( $this->render_instance_id ) . '">';
+			if ( $fdm_controller->table_context->unavailable() ) echo '<p role="alert">' . esc_html__( 'Table ordering is unavailable. Choose pickup or delivery if ordering is enabled.', 'food-and-drink-menu' ) . '</p>';
 			include( $template );
 			echo '</div>';
 		}
@@ -386,7 +387,7 @@ class fdmViewMenu extends fdmView {
 	public function ordering_enabled() {
 		global $fdm_controller;
 
-		return $fdm_controller->settings->get_setting( 'fdm-enable-ordering' );
+		return $fdm_controller->permissions->check_permission( 'ordering' ) && $fdm_controller->settings->get_setting( 'fdm-enable-ordering' );
 	}
 
 	public function ordering_display_progress() {

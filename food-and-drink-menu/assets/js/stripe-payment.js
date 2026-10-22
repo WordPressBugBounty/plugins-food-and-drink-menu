@@ -38,7 +38,7 @@ jQuery(document).ready(function($) {
 			var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
 			var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
 			var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
-			var delivery = jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup';
+			var delivery = fdm_get_fulfillment_mode();
 	
 			var custom_fields = {};
 			jQuery( '.fdm-ordering-custom-fields' ).find( 'input, textarea, select' ).each( function() {

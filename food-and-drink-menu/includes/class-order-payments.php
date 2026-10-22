@@ -47,7 +47,7 @@ class fdmOrderPayments {
 	
 		if ( $fdm_controller->settings->get_setting( 'ordering-payment-gateway' ) == 'paypal' ) {
 
-			wp_enqueue_script( 'fdm-paypal-payment', FDM_PLUGIN_URL . '/assets/js/paypal-payment.js', array( 'jquery' ), FDM_VERSION, true );
+			wp_enqueue_script( 'fdm-paypal-payment', FDM_PLUGIN_URL . '/assets/js/paypal-payment.js', array( 'jquery', 'fdm-ordering-js' ), FDM_VERSION, true );
 
 			wp_localize_script(
 				'fdm-paypal-payment',
@@ -62,7 +62,7 @@ class fdmOrderPayments {
 			$stripe_lib_version = $fdm_controller->settings->get_setting( 'fdm-stripe-sca' ) ? 'v3' : 'v2';
 
 			wp_enqueue_script( 'fdm-stripe', "https://js.stripe.com/{$stripe_lib_version}/", array( 'jquery' ), FDM_VERSION, true );
-			wp_enqueue_script( 'fdm-stripe-payment', FDM_PLUGIN_URL . '/assets/js/stripe-payment.js', array( 'jquery', 'fdm-stripe' ), FDM_VERSION, true );
+			wp_enqueue_script( 'fdm-stripe-payment', FDM_PLUGIN_URL . '/assets/js/stripe-payment.js', array( 'jquery', 'fdm-stripe', 'fdm-ordering-js' ), FDM_VERSION, true );
 			
 			wp_localize_script(
 				'fdm-stripe-payment',
@@ -248,6 +248,7 @@ class fdmOrderPayments {
 	 */
 	public function create_stripe_payment_intent() {
     	global $fdm_controller;
+		if ( ! $fdm_controller->permissions->check_permission( 'order_advanced' ) || ! $fdm_controller->settings->get_setting( 'enable-payment' ) ) $this->response_message( false, __( 'Online payment is currently unavailable.', 'food-and-drink-menu' ) );
 
     	if ( !check_ajax_referer( 'fdm-stripe-payment', 'nonce' ) ) { $this->response_message( false, __( 'The request has been rejected because it does not appear to have come from this site.', 'food-and-drink-menu' ) ); }
 
@@ -567,6 +568,8 @@ class fdmOrderPayments {
 
     		return $result;
     	}
+		global $fdm_controller;
+		if ( ! current_user_can( 'manage_fdm_orders' ) || ! $fdm_controller->permissions->check_permission( 'order_advanced' ) ) { $result[$id] = false; return $result; }
 
     	$order = new fdmOrderItem();
 
@@ -790,7 +793,7 @@ class fdmOrderPayments {
 			$order->payment_amount = fdmOrderPricing::normalize_money( $amount );
 			$order->post_status = 'fdm_order_received';
 			unset( $order->stripe_payment_intent_id );
-			$saved = $order->save_order_post();
+			$saved = $order->save_order_post( true );
 			if ( is_wp_error( $saved ) || 'fdm_order_received' !== get_post_status( $order->id ) ) {
 				delete_post_meta( $order->id, '_fdm_payment_transaction_id' );
 				delete_post_meta( $order->id, '_fdm_payment_gateway' );

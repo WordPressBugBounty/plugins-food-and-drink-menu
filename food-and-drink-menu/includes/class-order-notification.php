@@ -67,6 +67,11 @@ abstract class fdmOrderNotification {
 	 */
 	public function process_template( $message ) {
 		global $fdm_controller;
+		// Existing notification templates also identify dine-in orders. Owners
+		// can position the label explicitly with the new tag instead.
+		if ( 'dine_in' === $this->order->fulfillment_mode && $this->order->table_label && false === strpos( $message, '{table_label}' ) ) {
+			$message .= "\n" . __( 'Dine-in table:', 'food-and-drink-menu' ) . ' {table_label}';
+		}
 
 		$accept_order_url = add_query_arg(
 			array(
@@ -87,6 +92,8 @@ abstract class fdmOrderNotification {
 		
 		$template_tags = array(
 			'{order_number}'    => $this->order->ID,
+			'{fulfillment_mode}' => $this->order->fulfillment_mode,
+			'{table_label}' => esc_html( $this->order->table_label ),
 			'{email}'           => $this->order->email,
 			'{name}'            => $this->order->name,
 			'{note}'            => $this->order->note,

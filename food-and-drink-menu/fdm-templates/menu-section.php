@@ -1,6 +1,8 @@
+<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fdm_format_classes() sanitizes every class token. ?>
-<ul <?php echo fdm_format_classes( $this->classes ); ?> data-fdm-section="<?php echo esc_attr( $this->slug ); ?>">
+<ul <?php echo fdm_format_classes( $this->classes ); ?> data-fdm-term-id="<?php echo esc_attr( $this->id ); ?>" data-fdm-section="<?php echo esc_attr( $this->slug ); ?>">
 	<li class="fdm-section-header<?php echo ($this->background_image_placement == 'background' ? ' fdm-section-background-image' : ''); ?>" id="fdm-section-header-<?php echo esc_attr( $this->slug ); ?>">
+		<span id="<?php echo esc_attr( $this->internal_anchor() ); ?>" class="fdm-section-internal-anchor"></span>
 
 		<?php if ( ( $this->background_image_placement == 'background' ) and $this->image_url ) : ?>
 			<div class="fdm-section-header-image-area" style="background-image: url(<?php echo esc_attr( $this->image_url ); ?>); background-repeat: no-repeat; background-size: cover;">

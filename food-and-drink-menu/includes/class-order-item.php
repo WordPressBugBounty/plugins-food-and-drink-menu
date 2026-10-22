@@ -44,6 +44,9 @@ class fdmOrderItem {
 
 	// Whether this is a delivery order
 	public $delivery;
+	public $fulfillment_mode = '';
+	public $table_id = '';
+	public $table_label = '';
 
 	// The URL that the order was received from
 	public $permalink;
@@ -157,6 +160,7 @@ class fdmOrderItem {
 			'order_currency'  => '',
 			'pricing_snapshot_version' => 0,
 			'currency' => '',
+			'fulfillment_mode' => '', 'table_id' => '', 'table_label' => '',
 		);
 
 		$meta_defaults = apply_filters( 'fdm_order_metadata_defaults', $meta_defaults );
@@ -174,6 +178,9 @@ class fdmOrderItem {
 		$this->pickup_time = $meta['pickup_time'];
 		$this->permalink = $meta['permalink'];
 		$this->delivery = $meta['delivery'];
+		$this->fulfillment_mode = $meta['fulfillment_mode'] ?: ( $this->delivery ? 'delivery' : 'pickup' );
+		$this->table_id = $meta['table_id'];
+		$this->table_label = $meta['table_label'];
 		$this->receipt_id = $meta['receipt_id'];
 		$this->discount_code = $meta['discount_code'];
 		$this->payment_amount = $meta['payment_amount'];
@@ -207,7 +214,7 @@ class fdmOrderItem {
 		return apply_filters( 'get_the_date', $date );
 	}
 
-	public function save_order_post() {
+	public function save_order_post( $payment_transition = false ) {
 
 		$post = array(
 			'post_title'	=> $this->name,
@@ -219,7 +226,7 @@ class fdmOrderItem {
 		if ( isset( $this->id ) ) { 
 
 			$post['ID'] = $this->id;
-			$post['post_status'] = $this->post_status;
+			if ( $payment_transition ) $post['post_status'] = $this->post_status;
 
 			$this->save_order_post_meta();
 
@@ -263,6 +270,8 @@ class fdmOrderItem {
 			'note'            => $this->note,
 			'pickup_time'     => $this->pickup_time,
 			'delivery'        => $this->delivery,
+			'fulfillment_mode' => $this->fulfillment_mode ?: ( $this->delivery ? 'delivery' : 'pickup' ),
+			'table_id' => $this->table_id, 'table_label' => $this->table_label,
 			'receipt_id'      => $this->receipt_id,
 			'discount_code'   => $this->discount_code,
 			'permalink'       => $this->permalink,
@@ -337,7 +346,8 @@ class fdmOrderItem {
 		$this->phone = empty( $_POST['fdm_customer_phone'] ) ? '' : sanitize_text_field( $_POST['fdm_customer_phone'] );
 		$this->email = empty( $_POST['fdm_customer_email'] ) ? '' : sanitize_text_field( $_POST['fdm_customer_email'] );
 
-		$this->post_status = empty( $_POST['fdm_order_status'] ) ? $this->post_status : sanitize_text_field( $_POST['fdm_order_status'] );
+		// Status changes have a separate guarded form; full edits keep the current status.
+		$this->post_status = get_post_status( $this->id );
 
 		$this->estimated_time = empty( $_POST['fdm_order_eta'] ) ? '' : sanitize_text_field( $_POST['fdm_order_eta'] );
 

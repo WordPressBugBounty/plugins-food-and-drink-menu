@@ -94,6 +94,17 @@ class fdmDashboard {
 		?>
 		<div id="fdm-dashboard-content-area">
 
+			<?php if ( ! $fdm_controller->permissions->has_license_context() ) {
+				// Free installations and keyless trials do not need license recovery UI.
+			} elseif ( has_action( 'fsp_fdm_license_panel' ) && $fdm_controller->permissions->has_compatible_helper_contract() ) {
+				do_action( 'fsp_fdm_license_panel' );
+			} else { ?>
+				<div id="fdm-license-status" class="fdm-dashboard-catalogs">
+					<div class="fdm-dashboard-catalogs-title"><?php esc_html_e( 'Premium / Ultimate license status', 'food-and-drink-menu' ); ?></div>
+					<p><?php esc_html_e( 'Update or activate a compatible FSP Premium Helper to check or replace your Five Star Restaurant Menu license. Free menus remain available and saved settings are preserved.', 'food-and-drink-menu' ); ?></p>
+				</div>
+			<?php } ?>
+
 			<?php if ( sizeOf( $menus ) == 0 and sizeOf( $menu_items ) == 0 ) { ?>
 				<div class="fdm-dashboard-new-widget-box fsp-widget-box-full fdm-admin-closeable-widget-box" id="fdm-dashboard-restart-walkthrough-widget-box">
 					<div class="fdm-dashboard-new-widget-box-top"><?php _e('Restart Walk-Through', 'food-and-drink-menu'); ?><span id="fdm-dashboard-restart-walkthrough-down-caret">&nbsp;&nbsp;&#9660;</span><span id="fdm-dashboard-restart-walkthrough-up-caret">&nbsp;&nbsp;&#9650;</span></div>

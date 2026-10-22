@@ -40,6 +40,11 @@ class fdmAjax {
 		add_action( 'wp_ajax_nopriv_fdm_update_order_progress', array( $this, 'update_order_progress' ) );
 	}
 
+	private function require_ordering() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->check_permission( 'ordering' ) || empty( $fdm_controller->cart ) ) wp_send_json_error( array( 'error' => 'fdm_ordering_suspended', 'msg' => __( 'Ordering is currently unavailable.', 'food-and-drink-menu' ) ), 403 );
+	}
+
 	public function frontend_ajax_url() {
 		
 		?>
@@ -82,6 +87,7 @@ class fdmAjax {
 	}
 
 	public function add_item_to_cart() {		
+		$this->require_ordering();
 		global $fdm_controller;
 
 		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
@@ -176,6 +182,7 @@ class fdmAjax {
 	}
 
 	public function delete_item_from_cart() {
+		$this->require_ordering();
 		global $fdm_controller;
 
 		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
@@ -190,6 +197,7 @@ class fdmAjax {
 	}
 
 	public function clear_cart() {
+		$this->require_ordering();
 		global $fdm_controller;
 
 		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
@@ -359,6 +367,7 @@ class fdmAjax {
 	}
 
 	public function update_cart_quantities() {
+		$this->require_ordering();
 		global $fdm_controller;
 
 		if ( !check_ajax_referer( 'fdm-ordering', 'nonce' ) ) {
@@ -376,15 +385,19 @@ class fdmAjax {
 	}
 
 	public function update_order_progress() {
+		global $fdm_controller;
 
 		$order_statuses = fdm_get_order_statuses();
 
 		// intval() return 0 for undefined which could be a valid post_id
 		// $order_id = intval( $_POST['order_id'] );
 
-		$order_status = get_post_status( $_POST['order_id'] );
+		$id = absint( $_POST['order_id'] ?? 0 );
+		$post = get_post( $id );
+		$order_status = ! empty( $fdm_controller->orders ) && $id === $fdm_controller->orders->get_recent_order_id()
+			&& $post && FDM_ORDER_POST_TYPE === $post->post_type ? $post->post_status : false;
 
-		if ( $order_status ) {
+		if ( $order_status && isset( $order_statuses[ $order_status ] ) ) {
 			wp_send_json_success(
 				array(
 					'status'	=> $order_status,

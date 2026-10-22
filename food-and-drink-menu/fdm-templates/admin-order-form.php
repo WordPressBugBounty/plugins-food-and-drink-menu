@@ -1,4 +1,25 @@
+<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <div id="fdm-new-edit-order-screen">
+	<?php if ( ! empty( $this->order->id ) ) : ?>
+	<p><?php echo esc_html( $this->order->fulfillment_mode . ( $this->order->table_label ? ' / ' . $this->order->table_label : '' ) ); ?></p>
+	<form method="post" class="fdm-admin-status-form">
+		<?php wp_nonce_field( 'fdm_order_status_' . $this->order->id ); ?>
+		<input type="hidden" name="fdm_order_id" value="<?php echo esc_attr( $this->order->id ); ?>">
+		<input type="hidden" name="fdm_expected_status" value="<?php echo esc_attr( $this->order->post_status ); ?>">
+		<input type="hidden" name="fdm_revision" value="<?php echo esc_attr( (int) get_post_meta( $this->order->id, '_fdm_order_status_revision', true ) ); ?>">
+		<input type="hidden" name="fdm_request_id" value="<?php echo esc_attr( wp_generate_uuid4() ); ?>">
+		<label for="fdm_status_only"><?php esc_html_e( 'Order status', 'food-and-drink-menu' ); ?></label>
+		<select id="fdm_status_only" name="fdm_order_status">
+			<?php foreach ( fdm_get_order_statuses() as $key => $status ) : ?>
+			<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $this->order->post_status, $key ); ?>><?php echo esc_html( $status['label'] ); ?></option>
+			<?php endforeach; ?>
+		</select>
+		<label><input type="checkbox" name="fdm_correction" value="1"><?php esc_html_e( 'Correct an earlier status', 'food-and-drink-menu' ); ?></label>
+		<label for="fdm_correction_reason"><?php esc_html_e( 'Correction reason (no customer details)', 'food-and-drink-menu' ); ?></label>
+		<input id="fdm_correction_reason" name="fdm_correction_reason" maxlength="200">
+		<button type="submit" name="fdm_admin_status_submit" class="button"><?php esc_html_e( 'Update status only', 'food-and-drink-menu' ); ?></button>
+	</form>
+	<?php endif; ?>
 
 	<?php if ( ! empty( $this->update_message ) ) { ?>
 
@@ -257,17 +278,7 @@
 
 							<?php $order_statuses = fdm_get_order_statuses(); ?>
 
-							<select name='fdm_order_status'>
-
-								<?php foreach ( $order_statuses as $status_slug => $status ) { ?>
-
-									<option value='<?php echo esc_attr( $status_slug ); ?>' <?php echo ( (! empty( $this->order->post_status ) and $this->order->post_status == $status_slug ) ? 'selected' : '' ); ?>>
-										<?php echo esc_html( $status['label'] ); ?>
-									</option>
-
-								<?php } ?>
-
-							</select>
+							<p><?php echo esc_html( $order_statuses[ $this->order->post_status ]['label'] ?? $this->order->post_status ); ?></p>
 
 						</div>
 

@@ -1,5 +1,11 @@
 var cart_location = fdm_ordering_data.cart_location;
 
+// Shared by ordinary, Stripe and PayPal checkout. Table identity is verified
+// independently by the server; this field is only the selected fulfillment mode.
+function fdm_get_fulfillment_mode() {
+	return jQuery( 'input[name="fdm-fulfillment-mode"]' ).val() || jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || ( jQuery( 'input[name="fdm-delivery-toggle"]' ).length ? '' : 'pickup' );
+}
+
 jQuery(document).ready(function() {
 
 	fdm_move_stuff_in_cart();
@@ -139,7 +145,7 @@ jQuery(document).ready(function() {
 		var phone = jQuery( 'input[name="fdm_ordering_phone"]' ).val();
 		var note = jQuery( 'textarea[name="fdm_ordering_note"]' ).val();
 		var pickup_time = jQuery( 'input[name="fdm_pickup_time"]' ).length ? jQuery( 'input[name="fdm_pickup_time"]' ).val() : false;
-		var delivery = jQuery( 'input[name="fdm-delivery-toggle"]:checked' ).val() || 'pickup';
+		var delivery = fdm_get_fulfillment_mode();
 		var tip_amount = jQuery( '.fdm-tip-amount' ).length ? jQuery( '.fdm-tip-amount' ).val() : 0;
 		var discount_code = jQuery( '.fdm-discount-code' ).length ? jQuery( '.fdm-discount-code' ).val() : '';
 

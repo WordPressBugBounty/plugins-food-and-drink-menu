@@ -26,6 +26,12 @@ class fdmViewSection extends fdmView {
 	public $items;
 	public $item_posts = null;
 
+	/** Taxonomy identity inside a rendered menu; public slugs remain unchanged. */
+	public function internal_anchor() {
+		$instance = $this->menu && ! empty( $this->menu->render_instance_id ) ? $this->menu->render_instance_id : 'standalone';
+		return 'fdm-section-' . $instance . '-term-' . absint( $this->id ) . '-' . absint( $this->order ?? 0 );
+	}
+
 	const QUERY_BATCH_SIZE = 200;
 
 	/** Fetch menu items once in bounded batches and group them by section. */

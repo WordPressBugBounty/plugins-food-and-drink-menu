@@ -5,7 +5,7 @@ Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.1
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -302,30 +302,12 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 
 == Changelog ==
 
-= 2.6.1 (2026-10-08) =
-- Fixed an issue causing menu items to not use the order set for them.
-
-= 2.6.0 (2026-09-30) =
-- **IMPORTANT NOTE: This is a major update with several big changes. We suggest testing this update in a staging or development environment before updating your live environment. Or wait a few days before updating in the event that an issue is identified that requires a fix/new update.**
-- Added an improved menu setup and management workflow to make it easier to create, organize, publish and maintain restaurant menus.
-- Added a more direct menu item reordering workflow.
-- Added structured restaurant item attributes for clearer dietary, allergen and other item information.
-- Updates to the Refined and Image menu styles.
-- Updates to available sale pricing features.
-- Updates to available menu filtering and sorting options.
-- Improved menu styling and presentation options, with additional attention to responsive layouts and upgrade compatibility.
-- Improved structured menu data for more consistent menu, section, item, pricing and attribute information.
-- Improved historical order data so order details can remain meaningful when menu items or options are later changed.
-- Improved compatibility and version handling between the free plugin and Premium Helper.
-- Improved the security and reliability of order pricing, payment validation, imports, exports, API access and external-service communication.
-- Improved performance and scalability for large menus, stored orders and API/order data.
-- Fixed issues with legacy notification migration.
-- Fixed several reliability issues in order exports.
+= 2.7.0 (2026-10-22) =
+- Added a Reorder Items screen with drag-and-drop and keyboard controls. Item order applies wherever an item appears. (As noted on that screen, using this new tool overwrites any manual order you have previous set for menu items.)
+- Added menu spacing, price placement and image display controls (in the styling options).
+- Improved menu structured data and added menu, section and item data to the REST API.
+- Added snapshots to preserve item names, selected options and pricing details for new orders when menu items are later changed or deleted.
+- Improved server-side order pricing and payment validation, including duplicate payment callback handling.
+- Improved import/export validation and spreadsheet formula protection.
 
 [See changelog for all versions](https://www.fivestarplugins.com/changelogs/food-and-drink-menu.txt).
-
-== Upgrade Notice ==
-
-= 2.6.0 =
-This is a major update that includes changes to menu creation and organization, menu styles, Free/Premium feature availability, structured item data, ordering reliability and Premium Helper integration.
-Existing menu content and saved settings are intended to remain compatible. If your site uses the Premium Helper, food ordering, custom CSS, template overrides, advanced filtering or extensive menu customizations, we recommend testing the update on a staging site before updating your production site.

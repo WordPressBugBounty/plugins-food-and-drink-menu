@@ -1,4 +1,5 @@
-<?php 
+<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
+<?php
 	global $fdm_controller;
 ?>
 
@@ -37,7 +38,7 @@
 </div>
 
 <div <?php echo fdm_format_classes( $this->classes ); ?>>
-	
+
 	<h3 id='fdm-ordering-sidescreen-header'>
 		<div id='fdm-ordering-sidescreen-close'>
 			<span class='<?php echo ( $fdm_controller->settings->get_setting( 'fdm-order-cart-location' ) == 'side' ? 'dashicons dashicons-no-alt' : 'dashicons dashicons-dismiss' ); ?>'></span>
@@ -48,7 +49,7 @@
 	<div id='fdm-ordering-sidescreen-items-and-button'>
 
 		<div id='fdm-ordering-sidescreen-items'>
-			<?php 
+			<?php
 				$cart_items = $fdm_controller->cart->get_cart_items();
 				foreach ( $cart_items as $cart_item ) {
 					$item = new fdmViewItem( (array) $cart_item );
@@ -161,9 +162,9 @@
         <?php } ?>
 
 	</div> <!-- fdm-ordering-sidescreen-totals -->
-	
+
 	<?php $required_fields = is_array( $fdm_controller->settings->get_setting( 'fdm-ordering-required-fields' ) ) ? $fdm_controller->settings->get_setting( 'fdm-ordering-required-fields' ) : array(); ?>
-	
+
 	<div id='fdm-ordering-contact-details'>
 
 		<h3 id='fdm-ordering-sidescreen-contact-header'>
@@ -207,74 +208,85 @@
 		<?php $fields = $fdm_controller->settings->get_ordering_custom_fields(); ?>
 
 		<div class='fdm-ordering-custom-fields'>
-		
+
 			<?php foreach ( $fields as $field ) { ?>
-	
+
 				<div class='fdm-ordering-custom-field'>
-	
+
 				<div class='fdm-ordering-custom-field-label'>
 					<?php echo esc_html( $field->name ); ?>
 				</div>
-	
+
 				<div class='fdm-ordering-custom-field-input'>
-	
+
 					<?php if ( $field->type == 'section' ) : ?>
-	
+
 					<?php elseif ( $field->type == 'text' ) : ?>
-	
+
 						<input type='text' name='<?php echo esc_attr( $field->slug ); ?>' />
-	
+
 					<?php elseif ( $field->type == 'textarea' ) : ?>
-	
+
 						<textarea name='<?php echo esc_attr( $field->slug ); ?>'></textarea>
-	
+
 					<?php elseif ( $field->type == 'select' ) : ?>
-	
+
 						<select name='<?php echo esc_attr( $field->slug ); ?>'>
-	
+
 							<?php $field_values = explode( ",", $field->values ); ?>
-	
+
 							<?php foreach ( $field_values as $value ) { ?>
 								<option value='<?php echo esc_attr( sanitize_title( $value ) ); ?>' ><?php echo esc_html( $value ); ?></option>
 							<?php } ?>
-	
+
 						</select>
-	
+
 					<?php elseif ( $field->type == 'checkbox' ) : ?>
-	
+
 						<?php $field_values = explode( ",", $field->values ); ?>
-	
+
 						<?php foreach ( $field_values as $value ) { ?>
 							<input type='checkbox' name='<?php echo esc_attr( $field->slug ); ?>[]' value='<?php echo esc_attr( sanitize_title( $value ) ); ?>' data-slug="<?php echo esc_attr( $field->slug ); ?>" /><?php echo esc_html( $value );?><br />
 						<?php } ?>
-	
+
 					<?php endif; ?>
-	
+
 				</div>
 
-			</div>	
-	
+			</div>
+
 			<?php } ?>
 
 		</div>
 
 	</div>
 
-	<?php if ( $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) ) { ?>
+	<?php $table_context = $fdm_controller->table_context->current(); ?>
+	<?php if ( $table_context ) : ?>
+		<p><?php
+		/* translators: %s: Restaurant table label. */
+		echo esc_html( sprintf( __( 'Dine-in: %s', 'food-and-drink-menu' ), $table_context['label'] ) ); ?></p>
+		<input type="hidden" name="fdm-fulfillment-mode" value="dine_in">
+	<?php elseif ( $fdm_controller->table_context->unavailable() ) : ?>
+		<p role="alert"><?php esc_html_e( 'Table ordering is unavailable. Choose pickup or delivery.', 'food-and-drink-menu' ); ?></p>
+	<?php endif; ?>
+	<?php if ( ! $table_context && ( $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) || $fdm_controller->table_context->unavailable() ) ) { ?>
 		<div id='fdm-order-delivery-toggle'>
 			<div class='fdm-order-delivery-toggle-option'>
-				<input type='radio' name='fdm-delivery-toggle' class='fdm-delivery-toggle' value='pickup' checked /><?php echo esc_html( $this->get_label( 'label-pickup' ) ); ?>
+				<input type='radio' name='fdm-delivery-toggle' class='fdm-delivery-toggle' value='pickup' <?php checked( ! $fdm_controller->table_context->unavailable() ); ?> /><?php echo esc_html( $this->get_label( 'label-pickup' ) ); ?>
 			</div>
+			<?php if ( $fdm_controller->settings->get_setting( 'fdm-ordering-enable-delivery' ) ) : ?>
 			<div class='fdm-order-delivery-toggle-option'>
 				<input type='radio' name='fdm-delivery-toggle' class='fdm-delivery-toggle' value='delivery' /><?php echo esc_html( $this->get_label( 'label-delivery' ) ); ?>
 			</div>
+			<?php endif; ?>
 			<?php if ( $fdm_controller->settings->get_setting( 'ordering-delivery-minimum' ) ) { ?>
 
 				<div class='fdm-order-delivery-minimum'>
 					<label><?php echo esc_html( $this->get_label( 'label-delivery-minimum' ) ); ?></label>:
 					<span><?php echo esc_html( fdm_format_price( $fdm_controller->settings->get_setting( 'ordering-delivery-minimum' ) ) ); ?></span>
 				</div>
-			<?php } ?> 
+			<?php } ?>
 		</div>
 	<?php } ?>
 
@@ -313,9 +325,9 @@
 					<input type='hidden' name='upload' value='1' />
 					<input type='hidden' name='business' value='<?php echo esc_attr( $fdm_controller->settings->get_setting( 'paypal-email' ) ); ?>' />
 					<input type='hidden' name='currency_code' value='<?php echo esc_attr( $fdm_controller->settings->get_setting( 'ordering-currency' ) ); ?>' />
-					<input type='hidden' name='return' value='<?php echo get_permalink(); ?>' />
-					<input type='hidden' name='notify_url' value='<?php echo get_site_url(); ?>' />			
-					<input type='submit' id='paypal-submit' class='submit-button' data-permalink='<?php echo get_permalink(); ?>' value='<?php echo esc_attr( $this->get_label( 'label-pay-via-paypal' ) ); ?>' />
+					<input type='hidden' name='return' value='<?php echo esc_url( get_permalink() ); ?>' />
+					<input type='hidden' name='notify_url' value='<?php echo esc_url( get_site_url() ); ?>' />
+					<input type='submit' id='paypal-submit' class='submit-button' data-permalink='<?php echo esc_url( get_permalink() ); ?>' value='<?php echo esc_attr( $this->get_label( 'label-pay-via-paypal' ) ); ?>' />
 				</form>
 			<?php } else { ?>
 
@@ -358,7 +370,7 @@
 					</p>
 
 					<input type='hidden' name='payment_amount' id='fdm-ordering-sidescreen-stripe-total' value='0' />
-					
+
 					<button type='submit' id='stripe-submit' <?php echo ( $fdm_controller->settings->get_setting( 'fdm-stripe-sca' ) ? "disabled='disabled'" : '' ); ?>>
 						<?php echo esc_html( $this->get_label( 'label-pay-now' ) ); ?>
 					</button>

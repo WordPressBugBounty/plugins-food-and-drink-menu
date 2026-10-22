@@ -3,7 +3,7 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.6.1
+ * Version: 2.7.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Five Star Plugins
@@ -25,6 +25,8 @@ class fdmFoodAndDrinkMenu {
 	public $permissions;
 	public $settings;
 	public $structured_data;
+	public $table_context;
+	public $order_search;
 
 	// overall styling options
 	public $styles = array();
@@ -47,8 +49,8 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.6.1' );
-		define( 'FDM_FSPPH_CONTRACT_VERSION', 1 );
+		define( 'FDM_VERSION', '2.7.0' );
+		define( 'FDM_FSPPH_CONTRACT_VERSION', 2 );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -106,6 +108,10 @@ class fdmFoodAndDrinkMenu {
 		// Load settings
 		require_once( FDM_PLUGIN_DIR . '/includes/class-settings.php' );
 		$this->settings = new fdmSettings();
+		require_once FDM_PLUGIN_DIR . '/includes/class-table-context.php';
+		$this->table_context = new fdmTableContext();
+		require_once FDM_PLUGIN_DIR . '/includes/class-order-search.php';
+		$this->order_search = new fdmOrderSearch();
 
 		// Load import/export
 		require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
@@ -114,29 +120,10 @@ class fdmFoodAndDrinkMenu {
 		new fdmExport();
 		new fdmImport();
 
-		// Load ordering if necessary
-		if ( $this->settings->get_setting( 'fdm-enable-ordering' ) ) {
-			// Add custom roles and capabilities
-			add_action( 'init', array( $this, 'add_roles' ) );
-
-			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-item.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-item.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-email.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-sms.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-manager.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-manager.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-payments.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-admin-orders.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/WP_List_Table.OrdersTable.class.php' );
-
-			new fdmAdminOrders();
-
-			$this->cart = new fdmCartManager();
-			$this->orders = new fdmOrderManager();
-			new fdmOrderPayments();
-		}
+		add_action( 'init', array( $this, 'add_roles' ) );
+		// Read entitlements after both plugins have loaded, regardless of activation order.
+		add_action( 'plugins_loaded', array( $this, 'load_ordering' ), 20 );
+		add_action( 'init', array( $this, 'load_ordering' ), 7 );
 
 		// Load AJAX handlers
 		require_once( FDM_PLUGIN_DIR . '/includes/class-ajax.php' );
@@ -673,6 +660,34 @@ class fdmFoodAndDrinkMenu {
 	 * Administrators and Super Admins
 	 * @since 2.1.0
 	 */
+	public function load_ordering() {
+		if ( $this->orders ) return;
+
+
+		if ( $this->permissions->check_permission( 'ordering' ) ) {
+			// Add custom roles and capabilities
+
+			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-item.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-item.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-email.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-sms.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-manager.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-manager.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-order-payments.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/class-admin-orders.php' );
+			require_once( FDM_PLUGIN_DIR . '/includes/WP_List_Table.OrdersTable.class.php' );
+
+			new fdmAdminOrders();
+
+			$this->cart = new fdmCartManager();
+			$this->orders = new fdmOrderManager();
+			new fdmOrderPayments();
+		}
+
+	}
+
 	public function add_roles() {
 
 		$manage_orders_roles = apply_filters(
