@@ -332,22 +332,6 @@ jQuery( function ( $ ) {
  */
 jQuery(document).ready(function ($) {
 
-	/**
-	 * Load the map in the menu item details if an address exists
-	 * @since 2.0
-	 */
-	if ($('#fdm_item_source_address').val() !== '') {
-		fdm_update_source_map();
-	}
-
-	/**
-	 * Bind an event to load the map in the menu item details when the source
-	 * name, address or zoom level changes
-	 * @since 2.0
-	 */
-	$('#fdm_item_source_address, #fdm_item_source_zoom').change( function() {
-		fdm_update_source_map();
-	});
 
 	/**
 	 * Open Menu Item Flag selection
@@ -456,23 +440,8 @@ jQuery(document).ready(function ($) {
  * @since 2.0
  */
 function fdm_update_source_map() {
-
-	// Hide the map panel if no source is input
-	if ( jQuery('#fdm_item_source_address').val() === '' ) {
-		jQuery('.fdm-source-map').hide();
-
-	// Show the map panel and update map
-	} else if ( typeof fdm_settings !== 'undefined' ) {
-		jQuery('.fdm-source-map').empty();
-		var map_src = '//maps.google.com/maps/api/staticmap?markers=size:normal|color:blue|' + encodeURI(jQuery('#fdm_item_source_address').val()) + '&amp;zoom=' + encodeURI(jQuery('#fdm_item_source_zoom').val()) + '&amp;size=300x300&amp;scale=2&amp;sensor=false&amp;visual_refresh=true';
-		if (typeof fdm_settings['fdm-google-map-api-key'] !== 'undefined' && fdm_settings['fdm-google-map-api-key'] !== '' ) {
-			map_src += '&amp;key=' + encodeURI(fdm_settings['fdm-google-map-api-key']);
-		}
-		jQuery('.fdm-source-map').append('<img src="' + map_src + '">');
-		jQuery('.fdm-source-map').fadeIn('fast');
-	}
+	if ( window.fdmPremiumAdmin ) return window.fdmPremiumAdmin.sourceMap();
 }
-
 
 /**
  * Update map in Menu Item source preview
@@ -508,46 +477,6 @@ function fdm_menu_item_ordering_option_delete_handlers() {
 }
 
 
-jQuery(document).ready(function() {
-	jQuery('.fdm-custom-fields-add-nutrional-information').on('click', function() {
-		var nutritionalInformation = [
-			{name: "Nutritional Information", slug: "nutritional information", type: "section"},
-			{name: "Calories", slug: "calories", type: "text"},
-			{name: "Fat", slug: "fat", type: "text"},
-			{name: "Carbohydrates", slug: "carbohydrates", type: "text"},
-			{name: "Protein", slug: "protein", type: "text"},
-			{name: "Sodium", slug: "sodium", type: "text"}
-		];
-
-		jQuery(nutritionalInformation).each(function(index, element) {
-			var rowID = addCustomFieldRow(); console.log(rowID); console.log(index); console.log(element);
-
-			jQuery('input[name="name_' + rowID + '"]').val(element.name);
-			jQuery('input[name="slug_' + rowID + '"]').val(element.slug);
-			jQuery('select[name="type_' + rowID + '"]').val(element.type);
-		});
-	});
-});
-
-function addCustomFieldRow() {
-	var max_row = findInfiniteTableMaxRow();
-
-	jQuery('.sap-inifite-table-row-template').clone().appendTo('.sap-infinite-table tbody');
-
-	jQuery('.sap-infinite-table tbody .sap-inifite-table-row-template').removeClass('sap-inifite-table-row-template').addClass('sap-inifinite-table-row').addClass('sap-new-infinite-row');
-	jQuery('.sap-new-infinite-row').data('rowid', max_row + 1);
-	jQuery('.sap-new-infinite-row input, .sap-new-infinite-row select').each(function() {
-		jQuery(this).attr('name', jQuery(this).attr('name') + '_' + (max_row + 1));
-	});
-	jQuery('.sap-new-infinite-row').removeClass('sap-new-infinite-row').removeClass('sap-hidden');
-
-	setInfiniteTableDeleteHandlers();
-	setInfiniteTableUpdateHandlers();
-
-	return max_row + 1;
-}
-
-
 /* Hacky way of opening the right submenu */
 jQuery(document).ready(function($) {
 	jQuery('#menu-posts-fdm-menu').removeClass('wp-not-current-submenu').addClass('wp-has-current-submenu');
@@ -559,31 +488,6 @@ jQuery(document).ready(function($) {
 		}
 	});
 });
-
-/* Hacky way of changing the post_type for the bulk actions on the order form */
-jQuery(document).ready( function( $ ) {
-	jQuery( '#fdm-orders-table input[name="post_type"]' ).val( 'fdm-menu' );
-});
-
-/* Allow items to be added to an order in the admin area */
-jQuery( document ).ready( function( $ ) {
-
-	jQuery( '.fdm-admin-add-item-to-order, .fdm-admin-add-item-to-order-cancel' ).on( 'click', function() {
-		jQuery( '.fdm-admin-add-item-to-order-items-table, .fdm-admin-order-items-table' ).toggleClass( 'fdm-hidden' );
-	} );
-
-	jQuery( '.fdm-admin-add-item-cancel, .fdm-admin-add-item-to-order-modal-background, .fdm-admin-add-item-to-order-modal' ).on( 'click', function() {
-
-		jQuery( '.fdm-admin-add-item-to-order-modal, .fdm-admin-add-item-to-order-modal-background' ).addClass( 'fdm-hidden' );
-
-		jQuery( '#fdm-ordering-popup-options > div' ).remove();
-	} );
-
-	jQuery( '.fdm-admin-add-item-to-order-modal-inner' ).on( 'click', function( event ) {
-
-		event.stopPropagation();
-	} );
-} );
 
 /*NEW DASHBOARD MOBILE MENU AND WIDGET TOGGLING*/
 jQuery(document).ready(function($){
@@ -711,3 +615,7 @@ jQuery( document ).ready( function( $ ) {
     jQuery.post( ajaxurl, data, function() {} );
   });
 });
+function addCustomFieldRow() {
+	if ( window.fdmPremiumAdmin ) return window.fdmPremiumAdmin.addCustomFieldRow();
+	return false;
+}

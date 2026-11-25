@@ -5,7 +5,7 @@ Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.0
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,8 @@ Several additional features are included that will help ensure you're able to se
 ### Premium Restaurant Menu
 
 With the premium version of the plugin, you can extend the functionality of your restaurant menu to offer your guests the best possible experience. This includes multiple layout options, the ability to add custom fields to your menu items, search/sorting/filtering options, promotional features, advanced customization and much more.
+
+Premium features require a compatible FSP Premium Helper and verified paid access. Classic, Refined and Image styles and explicit Sale pricing remain Free.
 
 Premium features include:
 
@@ -234,6 +236,11 @@ For a list of specific features, see the description page here: [https://wordpre
 
 == Frequently Asked Questions ==
 
+= Why are paid features unavailable after updating? =
+
+Menu 2.8.0 uses the paid implementation in compatible FSP Premium Helper 0.3.0. Update or repair both plugins. Saved settings, item metadata, table links and orders are retained. A missing implementation is separate from a license-validation failure. Free menus still work without Helper. Verify the pair on staging and keep a database/files backup before updating; do not remove saved keys to troubleshoot missing implementation files.
+
+
 = How do I display my menu? =
 
 You can either make use of the included 'Menu' Gutenberg block or the [fdm-menu id="1"] shortcode (just replace the id with the actual id of the menu you want to display).
@@ -302,12 +309,15 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 
 == Changelog ==
 
-= 2.7.0 (2026-10-22) =
-- Added a Reorder Items screen with drag-and-drop and keyboard controls. Item order applies wherever an item appears. (As noted on that screen, using this new tool overwrites any manual order you have previous set for menu items.)
-- Added menu spacing, price placement and image display controls (in the styling options).
-- Improved menu structured data and added menu, section and item data to the REST API.
-- Added snapshots to preserve item names, selected options and pricing details for new orders when menu items are later changed or deleted.
-- Improved server-side order pricing and payment validation, including duplicate payment callback handling.
-- Improved import/export validation and spreadsheet formula protection.
+= 2.8.0 (2026-11-25) =
+- **IMPORTANT NOTE: This is release 3 of a 4-part series. Full documentation for a number of the new features is not yet available, and will be added once the 4th update in the series is completed. Please delay updating until the final update round if documentation is required.**
+- **If you are using the premium or ultimate version, please make sure to also update the FSP Premium Helper plugin to version 0.3.0 at the same time.**
+- Several updates have been made to separate and streamline the functionality of the premium and ultimate versions via the FSP Premium Helper plugin.
+- Fixed a reported overload involving item specials and source details that was causing unresponsive site behaviour for a user.
 
 [See changelog for all versions](https://www.fivestarplugins.com/changelogs/food-and-drink-menu.txt).
+
+== Upgrade Notice ==
+
+= 2.8.0 =
+Several updates have been made to separate and streamline the functionality of the premium and ultimate versions via the FSP Premium Helper plugin. If you are using the premium or ultimate version, please make sure to also update the FSP Premium Helper plugin to version 0.3.0 at the same time.

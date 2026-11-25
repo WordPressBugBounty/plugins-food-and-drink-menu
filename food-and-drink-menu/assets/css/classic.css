@@ -25,30 +25,9 @@
 .fdm-filtering-label {
 	font-size: 15px;
 }
-.fdm-filtering-text-input,
 .fdm-filtering-sorting-input {
 	width: 200px !important;
 	border-radius: 4px;
-}
-.fdm-filtering-min-price-input, .fdm-filtering-max-price-input {
-	border-radius: 4px;
-	width: 80px !important;
-}
-.fdm-filtering-price-slider-price-display .fdm-filtering-min-price-display,
-.fdm-filtering-price-slider-price-display .fdm-filtering-max-price-display,
-.fdm-filtering-price-slider-price-display .fdm-filtering-price-separator {
-	font-size: 15px;
-	display: block;
-	float: left;
-	margin-top: 21px;
-}
-
-.fdm-filtering-price-separator {
-	width: 40px;
-}
-.fdm-filtering-price-slider {
-	width: 176px;
-	margin: 2px 0 0 12px;
 }
 
 .fdm-the-menu {
@@ -276,40 +255,11 @@ ITEM
 	margin-left: 5px;
 }
 
-.fdm-src-panel {
-	order: 10;
-	display: flex;
-	justify-content: space-between;
-	margin-top: 28px;
-	font-size: 13px;
-}
-.fdm-item-src-name {
-	width: 100%;
-	order: 2;
-}
-.fdm-src-has-map .fdm-item-src-name {
-	width: calc(100% - 184px);
-	margin-left: auto;
-}
-.fdm-item-src-map {
-	width: 160px;
-	order: 1;
-}
-.fdm-src-panel p.src-title {
-	font-size: 18px;
-}
-.fdm-src-panel p.fdm-item-src-desc {
-	font-size: 13px;
-}
-
 @media screen and (max-width: 568px) {
-	.fdm-item-special,
-	.fdm-item-image
-	.fdm-item-src-map {
+	.fdm-item-special {
 		width: 120px;
 	}
-	.fdm-item-has-image .fdm-item-non-image-container,
-	.fdm-src-has-map .fdm-item-src-name {
+	.fdm-item-has-image .fdm-item-non-image-container {
 		width: calc(100% - 184px);
 	}
 }
@@ -317,24 +267,6 @@ ITEM
 /**************
 ORDERING
 **************/
-
-.fdm-menu-classic .fdm-add-to-cart-button,
-.fdm-menu-classic .fdm-options-add-to-cart-button {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	width: 120px;
-	text-align: center;
-	border: 1px solid #212427;
-	border-radius: 50px;
-	color: #212427;
-	font-size: 13px;
-}
-.fdm-menu-classic .fdm-add-to-cart-button:hover,
-.fdm-menu-classic .fdm-options-add-to-cart-button:hover {
-	background: #212427;
-	color: #fff;
-}
 
 .fdm-hidden {
 	display: none;

@@ -25,30 +25,9 @@
 .fdm-filtering-label {
 	font-size: 15px;
 }
-.fdm-filtering-text-input,
 .fdm-filtering-sorting-input {
 	width: 200px !important;
 	border-radius: 4px;
-}
-.fdm-filtering-min-price-input, .fdm-filtering-max-price-input {
-	border-radius: 4px;
-	width: 80px !important;
-}
-.fdm-filtering-price-slider-price-display .fdm-filtering-min-price-display,
-.fdm-filtering-price-slider-price-display .fdm-filtering-max-price-display,
-.fdm-filtering-price-slider-price-display .fdm-filtering-price-separator {
-	font-size: 15px;
-	display: block;
-	float: left;
-	margin-top: 21px;
-}
-
-.fdm-filtering-price-separator {
-	width: 40px;
-}
-.fdm-filtering-price-slider {
-	width: 176px;
-	margin: 2px 0 0 12px;
 }
 
 .fdm-the-menu {
@@ -312,10 +291,6 @@ ITEM
 	margin-left: 5px;
 }
 
-.fdm-src-panel {
-	display: none;
-}
-
 @media screen and (max-width: 1100px) {
 	.fdm-menu-image.fdm-menu-sidebar-1 .fdm-section-five .fdm-item {
 		width: 23.5%;
@@ -359,26 +334,6 @@ ITEM
 /**************
 ORDERING
 **************/
-
-.fdm-menu-image .fdm-add-to-cart-button,
-.fdm-menu-image .fdm-options-add-to-cart-button {
-	order: 4;
-	position: relative;
-	right: initial;
-	bottom: initial;
-	width: 120px;
-	text-align: center;
-	border: 1px solid #212427;
-	border-radius: 50px;
-	color: #212427;
-	font-size: 13px;
-	margin-left: initial !important;
-}
-.fdm-menu-image .fdm-add-to-cart-button:hover,
-.fdm-menu-image .fdm-options-add-to-cart-button:hover {
-	background: #212427;
-	color: #fff;
-}
 
 .fdm-hidden {
 	display: none;

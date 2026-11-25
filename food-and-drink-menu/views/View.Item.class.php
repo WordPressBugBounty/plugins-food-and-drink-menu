@@ -204,47 +204,9 @@ class fdmViewItem extends fdmView {
 	 * @since 2.1
 	 */
 	public function cart_render() {
-		
-		if ( !isset( $this->id ) ) {
-			return;
-		}
-
-		// A canonical cart item already has a title, but still needs image,
-		// prices and ordering options for its first (AJAX) render.
-		$this->load_item();
-
-		// Gather data if it's not already set
-		if ( ! isset( $this->order_price ) ) {
-			$this->load_determine_order_price();
-		}
-
-		$elements['cart_header'] = 'body';
-		$elements['title'] = 'body';
-		$elements['order_options'] = 'body';
-		if ( isset( $this->image ) ) {
-			$elements['image'] = 'body';
-			$classes[] = 'fdm-item-has-image';
-		}
-		if ( isset( $this->price ) && $this->price ) {
-			$elements['cart_price'] = 'body';
-			$classes[] = 'fdm-item-has-price';
-		}
-		$elements['cart_quantity'] = 'body';
-
-		$this->cart_elements = apply_filters( 'fdm_cart_menu_item_elements', $elements, $this );
-		$this->cart_elements_order = apply_filters( 'fdm_cart_menu_item_elements_order', $this->cart_elements_order, $this );
-
-		$this->set_allowed_tags();
-
-		// Capture output
-		ob_start();
-		$template = $this->find_template( 'cart-menu-item' );
-		if ( $template ) {
-			include( $template );
-		}
-		$output = ob_get_clean();
-
-		return apply_filters( 'fdm_cart_menu_item_output', $output, $this );
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
+		return fdmPremiumItem::cart_render( $this );
 	}
 
 	/**
@@ -282,25 +244,9 @@ class fdmViewItem extends fdmView {
 	 * @since 2.1
 	 */
 	public function print_cart_elements( $location ) {
-
-		$output = '';
-
-		foreach( $this->cart_elements_order as $element ) {
-			if ( isset( $this->cart_elements[$element] ) && $this->cart_elements[$element] == $location ) {
-
-				// Load the template for this content type
-				$template = $this->find_template( $this->content_map[$element] );
-
-				ob_start();
-				if ( $template ) {
-					include( $template );
-				}
-				$element_output = ob_get_clean();
-
-				$output .= apply_filters( 'fdm_element_output_cart_' . $element, $element_output, $this );
-			}
-		}
-		return $output;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
+		return fdmPremiumItem::print_cart_elements( $this, $location );
 	}
 
 	/**
@@ -351,74 +297,35 @@ class fdmViewItem extends fdmView {
 			);
 		}
 
-		if ( $fdm_controller->settings->get_setting('fdm-related-items') == 'manual') {
-			$this->related_items = $this->get_manual_related_items();
+		if ( $fdm_controller->permissions->can_execute( 'premium' ) ) {
+			fdmPremiumItem::enrich( $this );
 		}
 
-		if ( $fdm_controller->settings->get_setting('fdm-related-items') == 'automatic') {
-			$this->related_items = $this->get_automatic_related_items();
-		}
-
-		$fields = $fdm_controller->settings->get_menu_item_custom_fields();
-
-		$values = get_post_meta( $this->id, '_fdm_menu_item_custom_fields', true );
-		if ( ! is_array($values ) ) { $values = array(); }
-
-		if ( ! empty($values) ) {
-			foreach ($fields as $field) {
-				$field->value = isset( $values[$field->slug] ) ? $values[$field->slug] : '';
-				$this->custom_fields[] = $field;
-			}
-		}
-
-		$sources_permission = $fdm_controller->permissions->check_permission( 'sources' );
-	
-		// Source
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-src') ) && $sources_permission && $this->source_name = get_post_meta( $this->id, 'fdm_item_source_name', true ) ) {
-			$this->source_desc = get_post_meta( $this->id, 'fdm_item_source_description', true );
-			$this->source_address = get_post_meta( $this->id, 'fdm_item_source_address', true );
-			$this->source_map_enabled = $this->source_address && ! $fdm_controller->settings->get_setting( 'fdm-disable-src-map' );
-			if ( $this->source_map_enabled ) {
-				$this->source_zoom = get_post_meta( $this->id, 'fdm_item_source_zoom', true );
-			}
-	
-			if ( isset( $this->source_name ) && $this->source_name ) {
-				$this->source_classes = array( 'fdm-src-panel' );
-	
-				if ( $this->source_map_enabled ) {
-					$this->source_classes[] = 'fdm-src-has-map';
-				}
-			}
-		}
-
-		$flag_permissions = $fdm_controller->permissions->check_permission( 'flags' );
-	
-		// Menu Item Flags
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') ) && $flag_permissions ) {
-			$this->flags = array();
-			foreach ( fdm_get_item_attributes( $this->id ) as $attribute ) {
-				$flag = (object) $attribute;
-				$flag->name = $attribute['label'];
-				$flag->classes = array( 'fdm-flag', 'fdm-attribute-' . sanitize_html_class( $attribute['type'] ) );
-				if ( ! empty( $attribute['icon_url'] ) ) {
-					$flag->custom_icon_url = $attribute['icon_url'];
-				} elseif ( ! empty( $attribute['legacy_icon'] ) ) {
-					$flag->classes[] = 'fdm-icon';
-					$flag->classes[] = 'fdm-icon-' . sanitize_html_class( $attribute['legacy_icon'] );
-				} else {
-					$flag->classes[] = 'fdm-item-flag-text';
-					$flag->text_only = true;
-				}
-				$this->flags[] = $flag;
-			}
-		}
-
-		$discount_permissions = $fdm_controller->permissions->check_permission( 'discounts' );
 		$stored_special = get_post_meta( $this->id, 'fdm_item_special', true );
-		$explicit_sale = 'sale' === $stored_special;
-	
-		// Discounted price
-		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-price') ) && ( $explicit_sale || ( $discount_permissions && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) ) ) {
+		$this->special = false;
+		// Explicit Sale remains Free, including its price and label.
+		if ( 'sale' === $stored_special ) {
+			$this->special = 'sale';
+			$this->special_title = $this->get_label( 'label-on-sale' );
+			if ( ! $fdm_controller->settings->get_setting( 'fdm-disable-price' ) ) $this->load_discount_price();
+		} elseif ( $fdm_controller->permissions->can_execute( 'premium' ) ) {
+			fdmPremiumItem::specials( $this, $stored_special );
+		}
+
+		// Ordering
+		if ( $fdm_controller->settings->get_setting('fdm-enable-ordering') ) {
+			$this->ordering_available = $this->special == 'sold_out' ? false : true; //update once the schedulers are working
+
+			$ordering_options = get_post_meta( $this->id, '_fdm_ordering_options', true );
+			$this->ordering_options = is_array( $ordering_options ) ? $ordering_options : array();
+		}
+
+		do_action( 'fdm_load_item', $this );
+	}
+
+	public function load_discount_price() {
+		global $fdm_controller;
+		if ( 'sale' !== get_post_meta( $this->id, 'fdm_item_special', true ) && ! $fdm_controller->permissions->can_execute( 'discounts' ) ) return '';
 			$this->price_discount = get_post_meta( $this->id, 'fdm_item_price_discount', true );
 
 			if ( $this->price_discount ) {
@@ -432,38 +339,6 @@ class fdmViewItem extends fdmView {
 			if( ! empty($this->price_discount) ) {
 				$this->price_discount = fdm_format_price( $this->price_discount );
 			}
-		}
-
-		$specials_permissions = $fdm_controller->permissions->check_permission( 'specials' );
-	
-		// Specials
-		if ( $explicit_sale || ( empty( $fdm_controller->settings->get_setting('fdm-disable-specials') ) && $specials_permissions ) ) {
-			$this->special = $stored_special;
-			if ( $this->special == 'none' || !$this->special ) {
-				$this->special = false;
-			} elseif ( $this->special == 'sold_out' ) {
-				$this->special_title = $this->get_label( 'label-sold-out' );
-			} elseif ( $this->special == 'sale' ) {
-				$this->special_title = $this->get_label( 'label-on-sale' );
-			} elseif ( $this->special == 'offer' ) {
-				$this->special_title = $this->get_label( 'label-special-offer' );
-			} elseif ( $this->special == 'featured' ) {
-				$this->special_title = $this->get_label( 'label-featured' );
-			}
-		}
-		else {
-			$this->special = false;
-		}
-
-		// Ordering
-		if ( $fdm_controller->settings->get_setting('fdm-enable-ordering') ) {
-			$this->ordering_available = $this->special == 'sold_out' ? false : true; //update once the schedulers are working
-
-			$ordering_options = get_post_meta( $this->id, '_fdm_ordering_options', true );
-			$this->ordering_options = is_array( $ordering_options ) ? $ordering_options : array();
-		}
-
-		do_action( 'fdm_load_item', $this );
 	}
 
 	/**
@@ -516,28 +391,9 @@ class fdmViewItem extends fdmView {
 	 * @since 2.0
 	 */
 	public function get_automatic_related_items() {
-		$sections = wp_get_post_terms( $this->id, 'fdm-menu-section' );
-
-		$section_ids = array();
-		foreach ($sections as $section) {
-			$section_ids[] = $section->term_id;
-		}
-		$tax_query = array(
-			array(
-				'taxonomy' 	=> 'fdm-menu-section',
-				'field'		=> 'id',
-				'terms'		=> $section_ids
-			)
-		);
-
-		$section_query = new WP_Query( array(
-			'post__not_in' 		=> array($this->id),
-			'posts_per_page'	=> '4',
-			'tax_query' 		=> $tax_query,
-			'orderby'			=> 'rand'
-		) );
-
-		return $section_query->posts;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'related_items' ) ) return array();
+		return fdmPremiumItem::get_automatic_related_items( $this );
 	}
 
 	/**
@@ -545,17 +401,9 @@ class fdmViewItem extends fdmView {
 	 * @since 2.0
 	 */
 	public function get_manual_related_items() {
-		$related_items = get_post_meta( $this->id, '_fdm_related_items', true );
-		if ( ! is_array($related_items) ) { $related_items = array(); }
-
-		$related_posts = array();
-		foreach ( $related_items as $related_item ) { 
-			if ( ! $related_item ) { continue; }
-
-			$related_posts[] = get_post($related_item); 
-		}
-
-		return $related_posts;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'related_items' ) ) return array();
+		return fdmPremiumItem::get_manual_related_items( $this );
 	}
 
 	/**
@@ -569,10 +417,8 @@ class fdmViewItem extends fdmView {
 			$classes[] = 'fdm-item-has-price-discount';
 		}
 	
-		if ( !empty( $fdm_controller->settings->get_setting('fdm-item-flag-icon-size') ) && $fdm_controller->settings->get_setting('fdm-item-flag-icon-size') == '64' ) {
-			$classes[] = 'fdm-icon-64';
-		}
-	
+		if ( $fdm_controller->permissions->can_execute( 'flags' ) ) $classes = fdmPremiumItem::item_classes( $classes );
+
 		return $classes;
 	
 	}
@@ -583,31 +429,8 @@ class fdmViewItem extends fdmView {
 	 */
 	public function load_determine_order_price() {
 		global $fdm_controller;
-		
-		if ( ! empty( $this->price_discount ) and 
-			( empty( $fdm_controller->settings->get_setting( 'fdm-ordering-additional-prices' ) ) or 
-			( isset( $this->selected_price ) and substr( $this->selected_price, 0, strlen( $this->get_label( 'label-discount' ) ) ) == $this->get_label( 'label-discount' ) ) )
-		   ) { 
-			
-			$this->order_price = $this->price_discount;
-
-			return;
-		}
-
-		if ( isset( $this->selected_price ) and $this->selected_price ) {
-			
-			foreach ( $this->prices as $price ) {
-				
-				if ( $this->selected_price == $price ) {
-
-					$this->order_price = $price;
-					
-					return;
-				}
-			}
-		}
-		
-		$this->order_price = reset( $this->prices );
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
+		return fdmPremiumItem::load_determine_order_price( $this );
 	}
 }
  

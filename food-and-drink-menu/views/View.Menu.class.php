@@ -223,6 +223,8 @@ class fdmViewMenu extends fdmView {
 	 * @since 2.1
 	 */
 	public function print_order_sidescreen() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
 
 		$sidescreen = new fdmViewOrderingSidescreen( array() );
 
@@ -235,6 +237,8 @@ class fdmViewMenu extends fdmView {
 	 * @since 2.1
 	 */
 	public function print_order_popup() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
 
 		$order_popup = new fdmViewOrderingPopup( array() );
 
@@ -247,6 +251,8 @@ class fdmViewMenu extends fdmView {
 	 * @since 2.1
 	 */
 	public function print_order_progress() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return '';
 
 		$order_progress = new fdmViewOrderingProgress( array() );
 
@@ -325,16 +331,7 @@ class fdmViewMenu extends fdmView {
 	 */
 	public function menu_classes( $classes = array() ) {
 		global $fdm_controller;
-		$style_classes = array();
-		if ( $fdm_controller->permissions->check_permission( 'styling' ) ) {
-			$style_classes = array(
-				'fdm-spacing-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-item-spacing' ) ?: 'current' ),
-				'fdm-price-position-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-price-position' ) ?: 'current' ),
-				'fdm-image-ratio-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-image-aspect-ratio' ) ?: 'current' ),
-				'fdm-image-fit-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-image-fit' ) ?: 'cover' ),
-				'fdm-attribute-position-' . sanitize_html_class( $fdm_controller->settings->get_setting( 'fdm-styling-attribute-position' ) ?: 'current' ),
-			);
-		}
+		$style_classes = $fdm_controller->permissions->can_execute( 'styling' ) ? fdmPremiumStyles::menu_classes() : array();
 
 		$classes = array_merge(
 			$classes,
@@ -387,7 +384,7 @@ class fdmViewMenu extends fdmView {
 	public function ordering_enabled() {
 		global $fdm_controller;
 
-		return $fdm_controller->permissions->check_permission( 'ordering' ) && $fdm_controller->settings->get_setting( 'fdm-enable-ordering' );
+		return $fdm_controller->permissions->can_execute( 'ordering' ) && $fdm_controller->settings->get_setting( 'fdm-enable-ordering' );
 	}
 
 	public function ordering_display_progress() {

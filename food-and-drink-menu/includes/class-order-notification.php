@@ -234,5 +234,3 @@ abstract class fdmOrderNotification {
 	}
 }
 }
-
-?>

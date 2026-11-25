@@ -272,7 +272,7 @@
 @media screen and (max-width: 1024px) {
 	.post-type-fdm-menu .wrap,
   .post-type-fdm-menu-item .wrap,
-	.fdm-menu_page_fdm-orders .wrap,
+  .fdm-menu_page_fdm-orders .wrap,
   .fdm-menu_page_fdm-import .wrap,
   .fdm-menu_page_fdm-export .wrap {
 		padding: 0 32px 0 42px;
@@ -1225,10 +1225,6 @@
   width: 25em;
   height: 8em;
 }
-.fdm-source-map img {
-  width: 300px;
-  height: 300px
-}
 
 /**
  * Menu Item Flags
@@ -1386,21 +1382,6 @@ td.fdm-menu-item-add-ordering-option:hover {
 /*********************************
 *        ORDERS TABLE
 *********************************/
-
-.fdm-admin-order-item-name {
-  font-weight: 600;
-}
-.fdm-admin-order-items ul {
-  margin: 0;
-}
-.fdm-admin-order-items ul li {
-  list-style: disc;
-  margin-bottom: 0;
-  margin-left: 16px;
-}
-.fdm-admin-order-total-price {
-  font-weight: 600;
-}
 .fdm-notice {
   padding: 1em;
   background: #2ea2cc;
@@ -1708,59 +1689,6 @@ EDIT ORDER SCREEN
 .OrderDetail {
   max-width: 100%;
 }
-.fdm-admin-add-edit-order-content {
-  position: relative;
-  float: left;
-  width: 67%;
-  margin-top: 23px;
-}
-.fdm-admin-add-edit-order-sidebar {
-  position: relative;
-  float: right;
-  width: 30%;
-  margin-top: 23px;
-}
-
-
-.fdm-admin-add-edit-order-content table.fdm-admin-edit-product-table-no-th th {
-  display: none;
-}
-.fdm-admin-add-edit-order-content table.fdm-admin-edit-product-table-no-th td {
-  width: 100%;
-}
-.fdm-admin-add-edit-order-content #Order_Name {
-  padding: 3px 8px;
-  font-size: 1.7em;
-  line-height: 100%;
-  height: 1.7em;
-  width: 100%;
-  margin-top: 10px;
-}
-.fdm-admin-add-edit-order-content #Order_Name::-webkit-input-placeholder {
-  font-size: 24px !important;
-  line-height: 100% !important;
-  color: #aaa !important;
-}
-.fdm-admin-add-edit-order-content #Order_Name::-moz-input-placeholder {
-  font-size: 24px !important;
-  line-height: 100% !important;
-  color: #aaa !important;
-}
-.fdm-admin-add-edit-order-content #Order_Name:-moz-input-placeholder {
-  font-size: 24px !important;
-  line-height: 100% !important;
-  color: #aaa !important;
-}
-.fdm-admin-add-edit-order-content #Order_Name:-ms-input-placeholder {
-  font-size: 24px !important;
-  line-height: 100% !important;
-  color: #aaa !important;
-}
-.fdm-admin-add-edit-order-content #Order_Name::placeholder {
-  font-size: 24px !important;
-  line-height: 100% !important;
-  color: #aaa !important;
-}
 
 
 .fdm-admin-closeable-widget-box .fdm-dashboard-new-widget-box-top {
@@ -1782,10 +1710,6 @@ EDIT ORDER SCREEN
 }
 .fdm-admin-widget-box-start-closed .fdm-admin-edit-product-up-caret {
   display: none;
-}
-
-.fdm-admin-add-edit-order-content-full-widget-box {
-  width: 100% !important;
 }
 
 .button-primary.fdm-admin-edit-product-save-button {
@@ -1820,164 +1744,9 @@ EDIT ORDER SCREEN
   min-height: 100px;
 }
 
-.fdm-admin-order-totals {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-.fdm-admin-order-totals-field {
-  margin: 2px 0;
-}
-.fdm-admin-order-totals-field span {
-  display: inline-block;
-  width: 80px;
-}
-.fdm-admin-order-totals #fdm_order_subtotal,
-.fdm-admin-order-totals #fdm_order_total {
-  font-weight: bold;
-}
-
-.fdm-admin-add-item-to-order {
-  cursor: pointer;
-}
-.fdm-admin-add-item-to-order:hover {
-  color: #000;
-}
-
-.fdm-admin-add-item-to-order-items-table {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-.fdm-admin-add-item-to-order-cancel {
-  margin: 8px auto 16px 0;
-	padding: 9px 16px;
-	background: #f3f3f3;
-  color: #000;
-	font-size: 13px;
-	font-weight: normal;
-	text-decoration: none;
-  border: none;
-	border-radius: 10px;
-	cursor: pointer;
-}
-.fdm-admin-add-item-to-order-item {
-  margin-bottom: 12px;
-  cursor: pointer;
-}
-.fdm-admin-add-item-to-order-item:hover {
-  color: #000;
-}
-
-@media screen and (max-width: 782px) {
-  .fdm-admin-add-edit-order-content, .fdm-admin-add-edit-order-sidebar {
-    float: left;
-    width: 90%;
-    margin-left: 5%;
-  }
-  .fdm-admin-add-edit-order-content-full-widget-box {
-    width: 100% !important;
-    margin-left: 0;
-  }
-}
-
 /**** MODAL ****/
-.fdm-admin-add-item-to-order-modal,
-.fdm-admin-add-item-to-order-modal * {
-	box-sizing: border-box;
-}
-
-.fdm-admin-add-item-to-order-modal {
-	position: fixed;
-	z-index: 9999;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	top: 0;
-	left: 0;
-	background: rgba(0,0,0,0.8);
-}
-
-.fdm-admin-add-item-to-order-modal-inner {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	background-color: #fff;
-	width: 80%;
-	max-width: 550px;
-	padding: 16px;
-	border-radius: 14px;
-}
-.fdm-admin-add-item-title {
-	font-size: 24px;
-	font-weight: normal;
-	color: #000;
-	margin: 16px 16px 10px;
-}
-.fdm-admin-add-item-field {
-	display: flex;
-	width: 100%;
-	margin: 28px 0 0;
-	align-items: center;
-}
-.fdm-admin-add-item-field-label {
-	width: 80px;
-	margin-left: 16px;
-	color: #888;
-	font-size: 13px;
-	font-weight: normal;
-}
-.fdm-admin-add-item-field-input {
-  display: flex;
-  flex-direction: column;
-}
 .fdm-ordering-popup-option {
   margin-bottom: 10px;
-}
-.fdm-admin-add-item-field-input input {
-	border: 1px solid #ddd;
-	border-radius: 10px;
-	padding: 12px 8px;
-	color: #000;
-	font-size: 13px;
-	font-weight: normal;
-  line-height: normal;
-}
-.fdm-admin-add-item-field-input input[type="checkbox"] {
-	border-radius: 2px;
-}
-.fdm-admin-add-item-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-}
-.fdm-admin-add-item-cancel {
-	padding: 9px 32px;
-	background: #f3f3f3;
-  color: #000;
-	font-size: 13px;
-	font-weight: normal;
-	text-decoration: none;
-  border: none;
-	border-radius: 10px;
-	cursor: pointer;
-}
-.fdm-admin-add-item-submit button {
-	padding: 9px 32px;
-	background: #1b335f;
-	color:  #fff;
-	font-size: 13px;
-	font-weight: normal;
-	text-decoration: none;
-  border: none;
-	border-radius: 10px;
-	cursor: pointer;
-	transition: background .35s;
-}
-.fdm-admin-add-item-submit button:hover {
-	background: #375a9a;
 }
 
 /******************************/

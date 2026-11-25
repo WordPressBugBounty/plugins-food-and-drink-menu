@@ -248,7 +248,7 @@ class fdmOrderPayments {
 	 */
 	public function create_stripe_payment_intent() {
     	global $fdm_controller;
-		if ( ! $fdm_controller->permissions->check_permission( 'order_advanced' ) || ! $fdm_controller->settings->get_setting( 'enable-payment' ) ) $this->response_message( false, __( 'Online payment is currently unavailable.', 'food-and-drink-menu' ) );
+		if ( ! $fdm_controller->permissions->can_execute( 'order_advanced' ) || ! $fdm_controller->settings->get_setting( 'enable-payment' ) ) $this->response_message( false, __( 'Online payment is currently unavailable.', 'food-and-drink-menu' ) );
 
     	if ( !check_ajax_referer( 'fdm-stripe-payment', 'nonce' ) ) { $this->response_message( false, __( 'The request has been rejected because it does not appear to have come from this site.', 'food-and-drink-menu' ) ); }
 
@@ -329,6 +329,11 @@ class fdmOrderPayments {
 	 */
 	public function stripe_sca_succeed() {
     	global $fdm_controller;
+		if ( ! $this->payment_execution_allowed() ) {
+			// Do not mark the draft failed or discard its intent: reconcile after restoration.
+			$this->sca_response( false, '', $this->suspended_payment_data() );
+			return;
+		}
 
     	if ( !check_ajax_referer( 'fdm-stripe-payment', 'nonce' ) ) {
 
@@ -386,6 +391,10 @@ class fdmOrderPayments {
       		}
     	}
     	catch(Exception $ex) {
+			if ( ! $this->payment_execution_allowed() ) {
+				$this->sca_response( false, '', $this->suspended_payment_data() );
+				return;
+			}
 
       		$loaded && $order->payment_failed( $ex->getMessage() );
       		$data['message'] = $ex->getMessage();
@@ -569,7 +578,7 @@ class fdmOrderPayments {
     		return $result;
     	}
 		global $fdm_controller;
-		if ( ! current_user_can( 'manage_fdm_orders' ) || ! $fdm_controller->permissions->check_permission( 'order_advanced' ) ) { $result[$id] = false; return $result; }
+		if ( ! current_user_can( 'manage_fdm_orders' ) || ! $fdm_controller->permissions->can_execute( 'order_advanced' ) ) { $result[$id] = false; return $result; }
 
     	$order = new fdmOrderItem();
 
@@ -724,6 +733,7 @@ class fdmOrderPayments {
 	 * Persist one validated gateway transition exactly once.
 	 */
 	public function complete_payment( $order, $gateway, $transaction_id, $amount, $currency ) {
+		if ( ! $this->payment_execution_allowed() ) return false;
 		$transaction_id = sanitize_text_field( (string) $transaction_id );
 		if ( ! $order instanceof fdmOrderItem || empty( $order->id ) || '' === $transaction_id || ! $this->payment_matches_order( $order, $amount, $currency ) ) {
 			return false;
@@ -767,6 +777,8 @@ class fdmOrderPayments {
 		}
 
 		try {
+			// Recheck after acquiring the locks, before the first transaction/order write.
+			if ( ! $this->payment_execution_allowed() ) return false;
 			if ( get_post_meta( $order->id, '_fdm_payment_transaction_id', true ) ) {
 				return false;
 			}
@@ -807,6 +819,16 @@ class fdmOrderPayments {
 			$this->release_payment_lock( $transaction_lock, $lock_token );
 			$this->release_payment_lock( $order_lock, $lock_token );
 		}
+	}
+
+	private function payment_execution_allowed() {
+		global $fdm_controller;
+		return $fdm_controller->permissions->can_execute( 'order_advanced' )
+			&& $fdm_controller->settings->get_setting( 'enable-payment' );
+	}
+
+	private function suspended_payment_data() {
+		return array( 'code' => 'fdm_payment_suspended', 'message' => __( 'Online payment confirmation is suspended. Your pending order has been preserved. Contact the restaurant to reconcile payment after access is restored; do not pay again.', 'food-and-drink-menu' ) );
 	}
 
 	private function acquire_payment_lock( $option_name, $lock_value ) {

@@ -39,7 +39,7 @@ class fdmPermissions {
 			"api_usage"	=> 3
 		);
 		foreach ( array( 'fdm-enable-ordering' => 'ordering', 'enable-payment' => 'order_advanced', 'fdm-enable-ordering-options' => 'order_advanced', 'fdm-enable-ordering-progress-display' => 'ordering' ) as $setting => $permission ) {
-			add_filter( 'fdm-setting-' . $setting, function( $value ) use ( $permission ) { return $this->check_permission( $permission ) ? $value : false; } );
+			add_filter( 'fdm-setting-' . $setting, function( $value ) use ( $permission ) { return $this->can_execute( $permission ) ? $value : false; } );
 		}
 		add_action( 'admin_notices', array( $this, 'compatibility_notice' ) );
 	}
@@ -113,6 +113,13 @@ class fdmPermissions {
 
 		$contract = $this->get_helper_contract();
 		return ! empty( $contract ) && in_array( $permission_type, $contract['capabilities'], true );
+	}
+
+	/** Entitlement and local implementation are independent requirements. */
+	public function can_execute( $permission_type = '' ) {
+		global $fdm_controller;
+		return ! empty( $fdm_controller->implementation )
+			&& $fdm_controller->implementation->can_execute( $permission_type );
 	}
 
 	private function get_helper_contract() {

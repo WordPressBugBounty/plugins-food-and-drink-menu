@@ -9,13 +9,9 @@
 // Load library classes
 require_once( FDM_PLUGIN_DIR . '/views/Style.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.class.php' );
-require_once( FDM_PLUGIN_DIR . '/views/View.AdminOrderForm.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.Filtering.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.Item.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.Menu.class.php' );
-require_once( FDM_PLUGIN_DIR . '/views/View.OrderingPopup.class.php' );
-require_once( FDM_PLUGIN_DIR . '/views/View.OrderingProgress.class.php' );
-require_once( FDM_PLUGIN_DIR . '/views/View.OrderingSidescreen.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.Section.class.php' );
 require_once( FDM_PLUGIN_DIR . '/views/View.Sidebar.class.php' );
 

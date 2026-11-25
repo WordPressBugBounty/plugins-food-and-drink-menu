@@ -45,20 +45,13 @@ function fdm_move_item_flags_and_special_modal() {
 
 	jQuery( '.fdm-details-div-inside .fdm-item' ).each( function() {
 
-		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-menu-item-flags' ) );
 		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-special' ) );
-		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-item-custom-fields' ) );
-		jQuery( this ).find( '.fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-src-panel' ) );
 	});
+	if ( window.fdmPremiumItem ) window.fdmPremiumItem.moveRichModal();
 }
 
 function fdm_move_add_to_cart_modal() {
-
-	jQuery( '.fdm-details-div-inside' ).each( function() {
-
-		jQuery( this ).find( '.fdm-item-panel .fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-options-add-to-cart-button' ) );
-		jQuery( this ).find( '.fdm-item-panel .fdm-item-non-image-container' ).append( jQuery( this ).find( '.fdm-add-to-cart-button' ) );
-	});
+	if ( window.fdmPremiumItem ) return window.fdmPremiumItem.moveCartModal();
 }
 
 jQuery(document).ready(function($){

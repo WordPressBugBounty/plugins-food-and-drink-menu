@@ -374,7 +374,7 @@ class fdmCustomPostTypes {
 			);
 		}
 
-		$sources_permission = $fdm_controller->permissions->check_permission('sources');
+		$sources_permission = $fdm_controller->permissions->can_execute('sources');
 		if ( ! $fdm_controller->settings->get_setting('fdm-disable-src') and $sources_permission ) {
 			$meta_boxes['fdm_menu_item_source'] = array(
 				'id'		=>	'fdm_item_source',
@@ -487,12 +487,8 @@ class fdmCustomPostTypes {
 	
 	
 		$special_options = array( '' => __( 'None', 'food-and-drink-menu' ), 'sale' => __( 'On Sale', 'food-and-drink-menu' ) );
-		if ( $fdm_controller->permissions->check_permission( 'specials' ) && ! $fdm_controller->settings->get_setting( 'fdm-disable-specials' ) ) {
-			$special_options += array(
-				'offer' => __( 'Special Offer', 'food-and-drink-menu' ),
-				'featured' => __( 'Featured', 'food-and-drink-menu' ),
-				'sold_out' => __( 'Sold Out', 'food-and-drink-menu' ),
-			);
+		if ( $fdm_controller->permissions->can_execute( 'specials' ) && ! $fdm_controller->settings->get_setting( 'fdm-disable-specials' ) ) {
+			$special_options = fdmPremiumItem::special_options( $special_options );
 		}
 		if ( $special_selected && ! isset( $special_options[ $special_selected ] ) ) {
 			$special_options[ $special_selected ] = __( 'Saved paid selection (inactive)', 'food-and-drink-menu' );
@@ -555,43 +551,9 @@ class fdmCustomPostTypes {
 	 * @since 2.0
 	 */
 	public function show_menu_item_custom_fields() {
-		global $post, $fdm_controller;
-
-		$fields = $fdm_controller->settings->get_menu_item_custom_fields();
-
-		$values = get_post_meta( $post->ID, '_fdm_menu_item_custom_fields', true );
-		if ( ! is_array($values ) ) { $values = array(); } 
-
-		if ( ! empty( $fields ) ) { ?>
-			<div class='fdm-menu-item-custom-fields-container'>
-				<p><?php _e('Custom Fields', 'food-and-drink-menu'); ?></p>
-				<div class='fdm-menu-item-custom-fields'>
-					<?php foreach ( $fields as $field ) {?>
-						<div class='fdm-menu-item-custom-field-name'><?php echo $field->name; ?></div>
-						<div class='fdm-menu-item-custom-field-input'>
-							<?php if ( $field->type == 'section' ) : ?>
-							<?php elseif ( $field->type == 'text' ) : ?>
-								<input type='text' name='<?php echo $field->slug; ?>' value='<?php echo isset( $values[$field->slug] ) ? $values[$field->slug] : ''; ?>' />
-							<?php elseif ( $field->type == 'textarea' ) : ?>
-								<textarea name='<?php echo $field->slug; ?>'><?php echo isset( $values[$field->slug] ) ? $values[$field->slug] : ''; ?></textarea>
-							<?php elseif ( $field->type == 'select' ) : ?>
-								<select name='<?php echo $field->slug; ?>'>
-									<?php $field_values = explode(",", $field->values); ?>
-									<?php foreach ( $field_values as $value ) { ?>
-										<option value='<?php echo sanitize_title($value); ?>' <?php echo ( isset( $values[$field->slug] ) and $values[$field->slug] == sanitize_title($value) ) ? 'selected="selected"' : ''; ?> ><?php echo $value; ?></option>
-									<?php } ?>
-								</select>
-							<?php elseif ( $field->type == 'checkbox' ) : ?>
-								<?php $field_values = explode(",", $field->values); ?>
-								<?php foreach ( $field_values as $value ) { ?>
-									<input type='checkbox' name='<?php echo $field->slug; ?>[]' value='<?php echo sanitize_title($value); ?>' <?php echo ( isset( $values[$field->slug] ) and is_array( $values[$field->slug] ) and in_array( sanitize_title( $value ), $values[$field->slug] ) ) ? 'checked="checked"' : ''; ?> /><?php echo $value;?><br />
-								<?php } ?>
-							<?php endif; ?>
-						</div>
-					<?php } ?>
-				</div>
-			</div>
-		<?php }
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'custom_fields' ) ) return '';
+		return fdmPremiumItem::show_menu_item_custom_fields( $this );
 	}
 
 	/**
@@ -649,40 +611,9 @@ class fdmCustomPostTypes {
 	 * @since 2.0
 	 */
 	public function show_menu_item_related_items() {
-		global $post, $fdm_controller;
-
-		if ( $fdm_controller->settings->get_setting('fdm-related-items') != 'manual') { return; }
-
-		$related_items = get_post_meta( $post->ID, '_fdm_related_items', true );
-		if ( ! is_array($related_items) ) { $related_items = array(); }
-
-		$menu_items = get_posts( array(
-			'post_type' 		=> 'fdm-menu-item',
-			'posts_per_page' 	=> -1,
-			'post__not_in'		=> array( $post->ID )
-		) );
-		?>
-
-		<div class='fdm-menu-item-related-items-container'>
-			<p><?php _e('Related Items', 'food-and-drink-menu'); ?></p>
-			<div class='fdm-menu-item-related-items'>
-				<?php for ( $i=1; $i<=4; $i++ ) { ?>
-					<div class='fdm-menu-item-related-item-label'><?php echo __('Related Item ', 'food-and-drink-menu') . $i; ?></div>
-					<div class='fdm-menu-item-related-item-input'>
-						<select name='related_item_<?php echo $i; ?>'>
-							<option value=''></option>
-							<?php
-								foreach ( $menu_items as $menu_item ) { 
-									if ( $menu_item->ID != $post->ID ) { echo "<option value='" . $menu_item->ID . "' " . ( $menu_item->ID == $related_items[$i] ? 'selected="selected"' : '' ) . ">" . $menu_item->post_title . "</option>"; }
-								}
-							?>
-						</select>
-					</div>
-				<?php } ?>
-			</div>
-		</div>
-
-		<?php 
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'related_items' ) ) return array();
+		return fdmPremiumItem::show_menu_item_related_items( $this );
 	}
 
 	/**
@@ -697,13 +628,8 @@ class fdmCustomPostTypes {
 		// Retrieve values for this if it exists
 		$special_selected = get_post_meta( $post->ID, 'fdm_item_special', true );
 
-		$special_options = array(
-			'none'     => __( 'None', 'food-and-drink-menu-pro' ),
-			'sale'     => __( 'On Sale', 'food-and-drink-menu-pro' ),
-			'offer'    => __( 'Special Offer', 'food-and-drink-menu-pro' ),
-			'featured' => __( 'Featured', 'food-and-drink-menu-pro' ),
-			'sold_out' => __( 'Sold Out', 'food-and-drink-menu-pro' )
-		);
+		$special_options = array( 'none' => __( 'None', 'food-and-drink-menu-pro' ), 'sale' => __( 'On Sale', 'food-and-drink-menu-pro' ) );
+		if ( $fdm_controller->permissions->can_execute( 'specials' ) ) $special_options = fdmPremiumItem::special_options( $special_options );
 
 		$options = apply_filters( 'fdm_meta_boxe_specials_options', $special_options );
 
@@ -747,64 +673,9 @@ class fdmCustomPostTypes {
 	 * @since 2.0
 	 */
 	public function fdmp_show_item_source() {
-	
-		// Retrieve value for this if it exists
-		global $post;
-		$source_name = get_post_meta( $post->ID, 'fdm_item_source_name', true );
-		$source_desc = get_post_meta( $post->ID, 'fdm_item_source_description', true );
-		$source_address = get_post_meta( $post->ID, 'fdm_item_source_address', true );
-		$source_zoom = get_post_meta( $post->ID, 'fdm_item_source_zoom', true );
-	
-		// Set default zoom level
-		if ( !$source_zoom ) {
-			$source_zoom = 5;
-		}
-	
 		global $fdm_controller;
-	
-		?>
-	
-		<input type="hidden" name="fdm_nonce" value="<?php echo $fdm_controller->cpts->nonce; ?>">
-		<div class="fdm-source">
-	
-			<div class="fdm-source-input fdm-input-controls">
-				<div class="fdm-input-control">
-					<label for="fdm_item_source_name"><?php echo __( 'Source Name', 'food-and-drink-menu-pro' ); ?></label>
-					<input type="text" name="fdm_item_source_name" id="fdm_item_source_name" value="<?php echo esc_attr( $source_name ); ?>">
-				</div>
-				<div class="fdm-input-control">
-					<label for="fdm_item_source_description"><?php echo __( 'Source Description', 'food-and-drink-menu-pro' ); ?></label>
-					<textarea class="small-text" name="fdm_item_source_description" id="fdm_item_source_description"><?php echo esc_attr( $source_desc ); ?></textarea>
-				</div>
-	
-				<?php if ( empty( $fdm_controller->settings->get_setting('fdm-disable-src-map') ) ) : ?>
-	
-					<div class="fdm-input-control">
-						<label for="fdm_item_source_address"><?php echo __( 'Source Address', 'food-and-drink-menu-pro' ); ?></label>
-						<input type="text" name="fdm_item_source_address" id="fdm_item_source_address" value="<?php echo esc_attr( $source_address ); ?>">
-						<p class="description"><?php echo __( 'Enter the address to use in a Google Map.', 'food-and-drink-menu-pro' ); ?></p>
-					</div>
-					<div class="fdm-input-control">
-						<label for="fdm_item_source_zoom"><?php echo __( 'Map Zoom Level', 'food-and-drink-menu-pro' ); ?></label>
-						<input type="number" step="1" min="1" max="20" name="fdm_item_source_zoom" id="fdm_item_source_zoom" value="<?php echo esc_attr( $source_zoom ); ?>">
-					</div>
-	
-				<?php endif; ?>
-	
-			</div>
-	
-			<?php if ( empty( $fdm_controller->settings->get_setting('fdm-disable-src-map') ) ) : ?>
-	
-				<div class="fdm-source-map">
-				</div>
-	
-			<?php endif; ?>
-	
-			<div class="clearfix"></div>
-	
-		</div>
-	
-		<?php
+		if ( ! $fdm_controller->permissions->can_execute( 'sources' ) ) return '';
+		return fdmPremiumItem::fdmp_show_item_source( $this );
 	}
 
 	/**
@@ -1013,32 +884,18 @@ class fdmCustomPostTypes {
 
 			$meta_ids['fdm_item_price'] = 'sanitize_text_field';
 
-			$fields = $fdm_controller->settings->get_menu_item_custom_fields();
-
-			if ( isset( $_POST['ordering_option'] ) ) { 
-				foreach ( $_POST['ordering_option'] as $key => $ordering_option ) { 
-					array_map( 'sanitize_text_field', $_POST['ordering_option'][$key] );
+			// Ultimate option authoring stays in Free; unavailable controls never erase data.
+			if ( $fdm_controller->permissions->can_execute( 'order_advanced' ) && isset( $_POST['ordering_option'] ) && is_array( $_POST['ordering_option'] ) ) {
+				$options = array();
+				foreach ( wp_unslash( $_POST['ordering_option'] ) as $key => $option ) {
+					if ( ! is_array( $option ) || array_filter( $option, 'is_array' ) ) { return $post_id; }
+					$options[ $key ] = array_map( 'sanitize_text_field', $option );
 				}
-				update_post_meta( $post->ID, '_fdm_ordering_options', $_POST[ 'ordering_option'] );
+				update_post_meta( $post_id, '_fdm_ordering_options', $options );
 			}
-
-			$values = array(); 
-			foreach ($fields as $field) {
-				if ( $field->type == 'section') :
-				else :
-					$values[$field->slug] = ( isset( $_POST[$field->slug] ) and is_array( $_POST[$field->slug] ) ) ? array_map( 'sanitize_text_field' , $_POST[$field->slug] ) : sanitize_text_field( $_POST[$field->slug] );
-				endif;
+			if ( $fdm_controller->permissions->can_execute( 'premium' ) ) {
+				fdmPremiumItem::save_fields( $post_id );
 			}
-
-			update_post_meta( $post->ID, '_fdm_menu_item_custom_fields', $values );
-
-			$related_items = array(
-				1 => ( isset($_POST['related_item_1']) ? intval( $_POST['related_item_1'] ) : '' ),
-				2 => ( isset($_POST['related_item_2']) ? intval( $_POST['related_item_2'] ) : '' ),
-				3 => ( isset($_POST['related_item_3']) ? intval( $_POST['related_item_3'] ) : '' ),
-				4 => ( isset($_POST['related_item_4']) ? intval( $_POST['related_item_4'] ) : '' )
-			);
-			update_post_meta( $post->ID, '_fdm_related_items', $related_items );
 		}
 
 		// Define Menu organizer metadata
@@ -1091,7 +948,7 @@ class fdmCustomPostTypes {
 				$cur = get_post_meta( $post_id, $meta_id, true );
 				if ( 'fdm_item_special' === $meta_id
 					&& in_array( $cur, array( 'offer', 'featured', 'sold_out' ), true )
-					&& ! $fdm_controller->permissions->check_permission( 'specials' )
+					&& ! $fdm_controller->permissions->can_execute( 'specials' )
 					&& ( ! isset( $_POST[ $meta_id ] ) || sanitize_text_field( wp_unslash( $_POST[ $meta_id ] ) ) === $cur ) ) {
 					continue;
 				}
@@ -1116,12 +973,19 @@ class fdmCustomPostTypes {
 		// Define Menu Item data
 		if ( FDM_MENUITEM_POST_TYPE == $post->post_type ) {
 	
-			$meta_ids['fdm_item_price_discount'] = 'sanitize_text_field';
-			$meta_ids['fdm_item_special'] = 'sanitize_text_field';
-			$meta_ids['fdm_item_source_name'] = 'sanitize_text_field';
-			$meta_ids['fdm_item_source_description'] = 'sanitize_text_field';
-			$meta_ids['fdm_item_source_address'] = 'sanitize_text_field';
-			$meta_ids['fdm_item_source_zoom'] = 'sanitize_text_field';
+			// Sale is Free. Omitted paid fields are dormant, not requests to delete.
+			if ( isset( $_POST['fdm_item_price_discount'] ) && is_scalar( $_POST['fdm_item_price_discount'] ) ) {
+				$meta_ids['fdm_item_price_discount'] = 'sanitize_text_field';
+			}
+			if ( isset( $_POST['fdm_item_special'] ) && is_scalar( $_POST['fdm_item_special'] ) ) {
+				$requested = sanitize_text_field( wp_unslash( $_POST['fdm_item_special'] ) );
+				if ( in_array( $requested, array( '', 'none', 'sale' ), true ) || $GLOBALS['fdm_controller']->permissions->can_execute( 'specials' ) ) {
+					$meta_ids['fdm_item_special'] = 'sanitize_text_field';
+				}
+			}
+			if ( $GLOBALS['fdm_controller']->permissions->can_execute( 'sources' ) ) {
+				$meta_ids = fdmPremiumItem::source_meta_ids( $meta_ids );
+			}
 		}
 	
 		return $meta_ids;
@@ -1135,7 +999,7 @@ class fdmCustomPostTypes {
 		global $fdm_controller;
 
 		// Handle menu item flags
-		$flag_permissions = $fdm_controller->permissions->check_permission( 'flags' );
+		$flag_permissions = $fdm_controller->permissions->can_execute( 'flags' );
 		if ( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') or ! $flag_permissions ) { return; }
 	
 		?>
@@ -1157,7 +1021,7 @@ class fdmCustomPostTypes {
 		global $fdm_controller;
 
 		// Handle menu item flags
-		$flag_permissions = $fdm_controller->permissions->check_permission( 'flags' );
+		$flag_permissions = $fdm_controller->permissions->can_execute( 'flags' );
 		if ( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') or ! $flag_permissions ) { return; }
 	
 		// Retrieve the existing value
@@ -1258,7 +1122,7 @@ class fdmCustomPostTypes {
 		global $fdm_controller;
 
 		// Handle menu item flags
-		$flag_permissions = $fdm_controller->permissions->check_permission( 'flags' );
+		$flag_permissions = $fdm_controller->permissions->can_execute( 'flags' );
 		if ( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') or ! $flag_permissions ) { return; }
 	
 		if ( isset( $_POST['fdm_menu_item_flag_meta'] ) ) {
@@ -1655,7 +1519,7 @@ class fdmCustomPostTypes {
 	function fdmp_add_item_flag_taxonomy( $menu_item_taxonomies ) {
 		global $fdm_controller;
 
-		$flag_permissions = $fdm_controller->permissions->check_permission( 'flags' );
+		$flag_permissions = $fdm_controller->permissions->can_execute( 'flags' );
 	
 		if ( empty( $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') ) and $flag_permissions ) {
 			$menu_item_taxonomies['fdm-menu-item-flag'] = array(

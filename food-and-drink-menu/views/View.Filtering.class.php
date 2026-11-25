@@ -68,14 +68,17 @@ class fdmViewFiltering extends fdmView {
 	public function load_filtering() {
 		global $fdm_controller;
 
-		$paid_filtering = $fdm_controller->permissions->check_permission( 'filtering' );
-		$this->text_search = $paid_filtering ? $fdm_controller->settings->get_setting( 'fdm-text-search' ) : array();
-		$this->enable_price_filtering = $paid_filtering && $fdm_controller->settings->get_setting( 'fdm-enable-price-filtering' );
+		$paid_filtering = $fdm_controller->permissions->can_execute( 'filtering' );
+		$this->text_search = array();
+		$this->enable_price_filtering = false;
 		$this->price_filtering_type = $fdm_controller->settings->get_setting( 'fdm-price-filtering-type' );
 		$this->enable_section_filtering = (bool) $fdm_controller->settings->get_setting( 'fdm-enable-section-filtering' );
 		$name_sorting = ! $paid_filtering && (bool) $fdm_controller->settings->get_setting( 'fdm-enable-name-sorting' );
-		$this->enable_sorting = $name_sorting || ( $paid_filtering && $fdm_controller->settings->get_setting( 'fdm-enable-sorting' ) );
-		$this->sorting_types = $paid_filtering ? (array) $fdm_controller->settings->get_setting( 'fdm-item-sorting' ) : array();
+		$this->enable_sorting = $name_sorting;
+		$this->sorting_types = array();
+		if ( $paid_filtering ) {
+			$fdm_controller->implementation->call( 'filtering', array( 'operation' => 'load', 'view' => $this ) );
+		}
 		if ( $name_sorting && ! in_array( 'name', $this->sorting_types, true ) ) $this->sorting_types[] = 'name';
 
 		if ( $this->enable_section_filtering && ! empty( $this->menu->groups ) ) {
@@ -108,18 +111,10 @@ class fdmViewFiltering extends fdmView {
 	function enqueue_assets() {
 		global $fdm_controller;
 
-		$deps = array( 'jquery' );
-
-		if ( $fdm_controller->settings->get_setting( 'fdm-price-filtering-type' ) == 'slider' ) { 
-
-			wp_enqueue_style( 'ewd-urp-jquery-ui', FDM_PLUGIN_URL . '/assets/css/jquery-ui.min.css', FDM_VERSION );
-			
-			wp_enqueue_script( 'jquery-ui-slider' );
-
-			$deps[] = 'jquery-ui-slider'; 
-		}
-
 		wp_enqueue_script( 'fdm-filtering-js', FDM_PLUGIN_URL . '/assets/js/fdm-filtering-js.js', array( 'jquery' ), FDM_VERSION, true );
+		if ( $fdm_controller->permissions->can_execute( 'filtering' ) ) {
+			$fdm_controller->implementation->call( 'filtering', array( 'operation' => 'enqueue', 'view' => $this ) );
+		}
 	}
 
 }

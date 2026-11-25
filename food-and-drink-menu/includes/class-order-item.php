@@ -215,6 +215,9 @@ class fdmOrderItem {
 	}
 
 	public function save_order_post( $payment_transition = false ) {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return new WP_Error( 'fdm_ordering_suspended', __( 'Ordering is currently unavailable.', 'food-and-drink-menu' ) );
+		if ( isset( $this->id ) && FDM_ORDER_POST_TYPE !== get_post_type( $this->id ) ) return new WP_Error( 'fdm_invalid_order' );
 
 		$post = array(
 			'post_title'	=> $this->name,
@@ -262,6 +265,9 @@ class fdmOrderItem {
 	}
 
 	public function save_order_post_meta() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return new WP_Error( 'fdm_ordering_suspended' );
+		if ( ! isset( $this->id ) || FDM_ORDER_POST_TYPE !== get_post_type( $this->id ) ) return new WP_Error( 'fdm_invalid_order' );
 
 		$postmeta = array(
 			'name'            => $this->name,
@@ -312,18 +318,8 @@ class fdmOrderItem {
 	 */
 	public function process_admin_order_update() {
 		global $fdm_controller;
-
-		$this->validate_admin_submission();
-
-		if ( $this->is_valid_submission() === false ) {
-			return false;
-		}
-
-		$this->update_admin_order_total();
-		
-		$this->save_order_post(); 
-
-		return true;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_process_admin_order_update( $this );
 	}
 
 	/**
@@ -332,47 +328,8 @@ class fdmOrderItem {
 	 */
 	public function validate_admin_submission() {
 		global $fdm_controller;
-
-		$this->validation_errors = array();
-
-		if ( ! isset( $_POST['fdm-admin-nonce'] ) 
-		    or ! wp_verify_nonce( $_POST['fdm-admin-nonce'], 'fdm-admin-nonce' ) 
-		) {
-			$this->validation_errors[] = __( 'The request has been rejected because it does not appear to have come from this site.', 'food-and-drink-menu' );
-		}
-
-		// Order Data
-		$this->name = empty( $_POST['fdm_customer_name'] ) ? '' : sanitize_text_field( $_POST['fdm_customer_name'] );
-		$this->phone = empty( $_POST['fdm_customer_phone'] ) ? '' : sanitize_text_field( $_POST['fdm_customer_phone'] );
-		$this->email = empty( $_POST['fdm_customer_email'] ) ? '' : sanitize_text_field( $_POST['fdm_customer_email'] );
-
-		// Status changes have a separate guarded form; full edits keep the current status.
-		$this->post_status = get_post_status( $this->id );
-
-		$this->estimated_time = empty( $_POST['fdm_order_eta'] ) ? '' : sanitize_text_field( $_POST['fdm_order_eta'] );
-
-		$this->payment_amount = empty( $_POST['fdm_payment_amount'] ) ? 0 : sanitize_text_field( $_POST['fdm_payment_amount'] );
-		$this->discount_amount = empty( $_POST['fdm_discount_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_discount_amount'] ) );
-		$this->tip_amount = empty( $_POST['fdm_tip_amount'] ) ? 0 : floatval( sanitize_text_field( $_POST['fdm_tip_amount'] ) );
-		
-		$custom_fields = fdm_get_order_custom_field_snapshots( $this );
-
-		foreach ( $custom_fields as $custom_field ) {
-			$custom_field = (object) $custom_field;
-
-			if ( $custom_field->type == 'checkbox' ) { $this->custom_fields[ $custom_field->slug ] = ( empty( $_POST[ $custom_field->slug ] ) or ! is_array( $_POST[ $custom_field->slug ] ) ) ? array() : array_map( 'sanitize_text_field', wp_unslash( $_POST[ $custom_field->slug ] ) ); }
-			elseif ( $custom_field->type == 'textarea' ) { $this->custom_fields[ $custom_field->slug ] = empty( $_POST[ $custom_field->slug ] ) ? false : sanitize_textarea_field( $_POST[ $custom_field->slug ] ); }
-			else { $this->custom_fields[ $custom_field->slug ] = empty( $_POST[ $custom_field->slug ] ) ? false : sanitize_text_field( $_POST[ $custom_field->slug ] ); }
-		}
-
-		if ( ! empty( $this->custom_field_snapshots ) ) {
-			foreach ( $this->custom_field_snapshots as &$snapshot ) {
-				if ( ! empty( $snapshot['slug'] ) && array_key_exists( $snapshot['slug'], $this->custom_fields ) ) {
-					$snapshot['value'] = $this->custom_fields[ $snapshot['slug'] ];
-				}
-			}
-			unset( $snapshot );
-		}
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_validate_admin_submission( $this );
 	}
 
 	/**
@@ -380,21 +337,19 @@ class fdmOrderItem {
 	 * @since 2.4.1
 	 */
 	public function is_valid_submission() {
-
-		if ( !count( $this->validation_errors ) ) {
-			return true;
-		}
-
-		return false;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_is_valid_submission( $this );
 	}
 
 	/**
 	 * Update the order total, in case an admin updates the tip or discount amounts
 	 * @since 2.5.0
 	 */
-	public function update_admin_order_total() { 
-		
-		$this->order_total = $this->subtotal + $this->tax_amount + $this->tip_amount + $this->delivery_amount - $this->discount_amount;
+	public function update_admin_order_total() {
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_update_admin_order_total( $this );
 	}
 
 	/**
@@ -402,19 +357,9 @@ class fdmOrderItem {
 	 * @since 2.4.1
 	 */
 	public function process_admin_delete_order_item() {
-
-		$item_id = sanitize_text_field( $_GET['item_id'] );
-
-		if ( ! empty( $this->order_items[ $item_id ] ) ) { 
-
-			unset( $this->order_items[ $item_id ] ); 
-
-			$this->save_order_post();
-			
-			return true;
-		}
-
-		return false;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_process_admin_delete_order_item( $this );
 	}
 
 	/**
@@ -432,7 +377,9 @@ class fdmOrderItem {
 	 */
 	public function get_order_total_tax_in() {
 
-		if ( ! isset( $this->order_total ) ) { 
+		if ( ! isset( $this->order_total ) ) {
+			global $fdm_controller;
+			if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return new WP_Error( 'fdm_ordering_suspended', __( 'Ordering is currently unavailable.', 'food-and-drink-menu' ) );
 
 			$this->calculate_order_subtotal();
 
@@ -454,13 +401,8 @@ class fdmOrderItem {
 	 */
 	public function calculate_order_subtotal() {
 		global $fdm_controller;
-
-		$this->subtotal = 0;
-
-		foreach ( $this->get_order_items() as $order_item ) {
-			
-			$this->subtotal += fdm_calculate_admin_price( $order_item );
-		}
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_calculate_order_subtotal( $this );
 	}
 
 	/**
@@ -469,25 +411,8 @@ class fdmOrderItem {
 	 */
 	public function maybe_apply_discount_code() {
 		global $fdm_controller;
-		
-		$this->discount_amount = 0;
-		if ( empty( $this->discount_code ) ) { return; }
-
-		$discounts = fdm_decode_infinite_table_setting( $fdm_controller->settings->get_setting( 'order-discount-codes' ) );
-
-		foreach( $discounts as $discount ) {
-
-			if ( $discount->code != $this->discount_code ) { continue; }
-
-			if ( ! $discount->enabled ) { continue; }
-
-			if ( (float) $discount->minimum > (float) $this->subtotal )  { continue; }
-
-			if ( ( ! empty( $discount->start_datetime ) and strtotime( $discount->start_datetime ) > time() ) or ( ! empty( $discount->end_datetime ) and strtotime( $discount->end_datetime ) < time() ) ) { continue; }
-
-			$this->discount_amount = round( $discount->type == 'amount' ? max( min( (float) $discount->amount, $this->subtotal ), 0 ) : $this->subtotal * max( min( (float) $discount->amount, 100 ), 0 ) / 100, 2 );
-			return;
-		}
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_maybe_apply_discount_code( $this );
 	}
 
 	/**
@@ -496,12 +421,8 @@ class fdmOrderItem {
 	 */
 	public function maybe_add_delivery_fee() {
 		global $fdm_controller;
-
-		$this->delivery_amount = 0;
-		if ( $this->delivery and ! empty( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) ) ) {
-
-			$this->delivery_amount = floatval( $fdm_controller->settings->get_setting( 'ordering-delivery-fee' ) );
-		}
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_maybe_add_delivery_fee( $this );
 	}
 
 	/**
@@ -510,12 +431,8 @@ class fdmOrderItem {
 	 */
 	public function calculate_tax_amount() {
 		global $fdm_controller;
-		
-		$tax_rate = floatval( preg_replace( '/[^0-9.-]/', '', $fdm_controller->settings->get_setting( 'ordering-tax-rate' ) ) ) / 100;
-
-		$taxable_amount = $this->subtotal - $this->discount_amount + $this->delivery_amount;
-
-		$this->tax_amount = round( max( 0, apply_filters( 'fdm_taxable_amount', $taxable_amount, $this->subtotal, $this->discount_amount, $this->delivery_amount, $this->tip_amount ) * $tax_rate ), 2 );
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) return false;
+		return fdmOrderWorkflow::item_calculate_tax_amount( $this );
 	}
 
 	/**
@@ -552,5 +469,3 @@ class fdmOrderItem {
 
 }
 }
-
-?>

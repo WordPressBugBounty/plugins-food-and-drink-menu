@@ -76,7 +76,7 @@ class fdmSettings {
 	public function get_effective_pro_style( $style ) {
 		global $fdm_controller;
 		$allowed = array( 'classic', 'refined', 'image' );
-		if ( isset( $fdm_controller->permissions ) && $fdm_controller->permissions->check_permission( 'styling' ) ) {
+		if ( isset( $fdm_controller->permissions ) && $fdm_controller->permissions->can_execute( 'styling' ) ) {
 			$allowed[] = 'luxe';
 			$allowed[] = 'ordering';
 		}
@@ -265,6 +265,8 @@ Click on the following link to accept the order: {accept_link}
 	 */
 	public function save_settings() {
 		
+		$stored = get_option( 'food-and-drink-menu-settings', array() );
+		$this->settings = array_merge( is_array( $stored ) ? $stored : array(), is_array( $this->settings ) ? $this->settings : array() );
 		update_option( 'food-and-drink-menu-settings', $this->settings );
 	}
 
@@ -469,7 +471,7 @@ Click on the following link to accept the order: {accept_link}
 				'description' => __( 'Allow visitors to show menu items from one section at a time.', 'food-and-drink-menu' ),
 			)
 		);
-		if ( ! $fdm_controller->permissions->check_permission( 'advanced' ) ) {
+		if ( ! $fdm_controller->permissions->can_execute( 'advanced' ) ) {
 			$sap->add_setting(
 				'food-and-drink-menu-settings',
 				'fdm-enable-settings',
@@ -778,7 +780,7 @@ Click on the following link to accept the order: {accept_link}
 	public function show_submit_button( $permission_type = '' ) {
 		global $fdm_controller;
 
-		if ( $fdm_controller->permissions->check_permission( $permission_type ) ) {
+		if ( $fdm_controller->permissions->can_execute( $permission_type ) ) {
 			return true;
 		}
 
@@ -788,7 +790,7 @@ Click on the following link to accept the order: {accept_link}
 	public function premium_info( $section_and_perm_type ) {
 		global $fdm_controller;
 
-		$is_premium_user = $fdm_controller->permissions->check_permission( $section_and_perm_type );
+		$is_premium_user = $fdm_controller->permissions->can_execute( $section_and_perm_type );
 		$is_helper_installed = defined( 'FSPPH_PLUGIN_FNAME' ) && is_plugin_active( FSPPH_PLUGIN_FNAME );
 
 		if ( $is_premium_user || $is_helper_installed ) {
@@ -935,44 +937,23 @@ Click on the following link to accept the order: {accept_link}
 	 * @since 2.2
 	 */
 	public function get_menu_item_custom_fields() {
-
-		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ?? '' ) );
-
-		$fields = is_array( $fields ) ? $fields : array();
-
-		$menu_item_fields = array();
-
-		foreach ( $fields as $field ) {
-
-			if ( empty( $field->applicable ) or $field->applicable == 'menu_item' ) { 
-
-				$menu_item_fields[] = $field;
-			}
-		}
-
-		return $menu_item_fields;
+		return $this->read_custom_field_definitions( 'menu_item' );
 	}
 
-	/**
-	 * Returns custom fields that should be displayed for ordering
-	 * @since 2.2
-	 */
+	/** Shared read-only schema is also needed by historical order fallbacks. */
 	public function get_ordering_custom_fields() {
+		return $this->read_custom_field_definitions( 'order' );
+	}
 
-		$fields = json_decode( html_entity_decode( $this->get_setting('fdm-custom-fields') ?? '' ) );
-
-		$fields = is_array( $fields ) ? $fields : array();
-
-		$ordering_fields = array();
-
-		foreach ( $fields as $field ) {
-
-			if ( empty( $field->applicable ) or $field->applicable != 'order' ) { continue; }
-
-			$ordering_fields[] = $field;
+	private function read_custom_field_definitions( $applicable ) {
+		$raw = $this->get_setting( 'fdm-custom-fields' );
+		$fields = is_string( $raw ) ? json_decode( html_entity_decode( $raw ) ) : null;
+		$result = array();
+		foreach ( is_array( $fields ) ? $fields : array() as $field ) {
+			if ( ! is_object( $field ) ) continue;
+			if ( 'order' === $applicable ? ( isset( $field->applicable ) && 'order' === $field->applicable ) : ( empty( $field->applicable ) || 'menu_item' === $field->applicable ) ) $result[] = $field;
 		}
-
-		return $ordering_fields;
+		return $result;
 	}
 
 }

@@ -3,7 +3,7 @@
  * Plugin Name: Five Star Restaurant Menu and Food Ordering
  * Plugin URI: https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/
  * Description: Restaurant menu and food ordering system that is easy to set up and integrates with any theme. Includes restaurant menu blocks and patterns.
- * Version: 2.7.0
+ * Version: 2.8.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Five Star Plugins
@@ -27,6 +27,7 @@ class fdmFoodAndDrinkMenu {
 	public $structured_data;
 	public $table_context;
 	public $order_search;
+	public $implementation;
 
 	// overall styling options
 	public $styles = array();
@@ -49,8 +50,9 @@ class fdmFoodAndDrinkMenu {
 		define( 'FDM_PLUGIN_FNAME', plugin_basename( __FILE__ ) );
 		define( 'FDM_UPGRADE_URL', 'https://www.fivestarplugins.com/license-payment/?Selected=FDM&Quantity=1' );
 		define( 'FDM_TEMPLATE_DIR', 'fdm-templates' );
-		define( 'FDM_VERSION', '2.7.0' );
+		define( 'FDM_VERSION', '2.8.0' );
 		define( 'FDM_FSPPH_CONTRACT_VERSION', 2 );
+		define( 'FDM_IMPLEMENTATION_API_VERSION', 1 );
 		define( 'FDM_MENU_POST_TYPE', 'fdm-menu' );
 		define( 'FDM_MENUITEM_POST_TYPE', 'fdm-menu-item' );
 		define( 'FDM_ORDER_POST_TYPE', 'fdm-order' );
@@ -69,6 +71,8 @@ class fdmFoodAndDrinkMenu {
 		// Load permissions and handle combination
 		require_once( FDM_PLUGIN_DIR . '/includes/class-permissions.php' );
 		$this->permissions = new fdmPermissions();
+		require_once FDM_PLUGIN_DIR . '/includes/Implementation.class.php';
+		$this->implementation = new fdmImplementation();
 		$this->handle_combination();
 
 		// Load template functions
@@ -96,6 +100,8 @@ class fdmFoodAndDrinkMenu {
 		// Load review ask
 		require_once( FDM_PLUGIN_DIR . '/includes/class-review-ask.php' );
 		new fdmReviewAsk();
+		require_once FDM_PLUGIN_DIR . '/includes/class-black-friday-2026-notice.php';
+		new fdmBlackFriday2026Notice();
 
 		// Load walk-through
 		require_once( FDM_PLUGIN_DIR . '/includes/class-installation-walkthrough.php' );
@@ -115,6 +121,11 @@ class fdmFoodAndDrinkMenu {
 
 		// Load import/export
 		require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
+		// Stable serialized identities and history/kernel contracts are shared.
+		require_once FDM_PLUGIN_DIR . '/includes/class-cart-item.php';
+		require_once FDM_PLUGIN_DIR . '/includes/class-order-item.php';
+		require_once FDM_PLUGIN_DIR . '/includes/class-order-manager.php';
+		require_once FDM_PLUGIN_DIR . '/includes/class-order-notification.php';
 		require_once( FDM_PLUGIN_DIR . '/includes/class-export.php' );
 		require_once( FDM_PLUGIN_DIR . '/includes/class-import.php' );
 		new fdmExport();
@@ -299,20 +310,6 @@ class fdmFoodAndDrinkMenu {
 					)
 				)
 			),
-			'luxe' => new fdmStyle(
-				array(
-					'id'	=> 'luxe',
-					'label'	=> __( 'Luxe', 'food-and-drink-menu' ),
-					'css'	=> array(
-						'base' => FDM_PLUGIN_URL . '/assets/css/base.css',
-						'luxe' => FDM_PLUGIN_URL . '/assets/css/luxe.css'
-					),
-					'js'	=> array(
-						'base' => FDM_PLUGIN_URL . '/assets/js/base.js',
-						'luxe' => FDM_PLUGIN_URL . '/assets/js/luxe.js'
-					)
-				)
-			),
 			'image' => new fdmStyle(
 				array(
 					'id'	=> 'image',
@@ -327,19 +324,7 @@ class fdmFoodAndDrinkMenu {
 					)
 				)
 			),
-			'ordering' => new fdmStyle(
-				array(
-					'id'	=> 'ordering',
-					'label'	=> __( 'Ordering', 'food-and-drink-menu' ),
-					'css'	=> array(
-						'base' => FDM_PLUGIN_URL . '/assets/css/base.css',
-						'ordering' => FDM_PLUGIN_URL . '/assets/css/ordering-style.css'
-					),
-					'js'	=> array(
-						'base' => FDM_PLUGIN_URL . '/assets/js/base.js'
-					)
-				)
-			),
+
 		);
 		$this->prostyles = apply_filters( 'fdm_styles', $this->prostyles );
 
@@ -553,7 +538,7 @@ class fdmFoodAndDrinkMenu {
 		add_action( 'admin_footer', array( $this, 'print_modals' ) );
 
 		// Adds the front-end ordering JS to the admin edit order page, to allow adding items to orders by the admin
-		if ( $screen->id != 'admin_page_fdm-add-edit-order' ) { return; }
+		if ( $screen->id != 'admin_page_fdm-add-edit-order' || ! $this->permissions->can_execute( 'ordering' ) ) { return; }
 
 		wp_enqueue_script( 'fdm-admin-ordering', FDM_PLUGIN_URL . '/assets/js/fdm-ordering-js.js', array( 'jquery' ), FDM_VERSION );
 
@@ -578,6 +563,7 @@ class fdmFoodAndDrinkMenu {
 			'tax_rate' 		   => $fdm_controller->settings->get_setting( 'ordering-tax-rate' ),
 		);
 		wp_localize_script( 'fdm-admin-ordering', 'fdm_ordering_data', $fdm_ordering_data );
+		fdmPremiumStyles::ordering_assets( 'fdm-admin-ordering' );
 	}
 
 	/**
@@ -664,20 +650,19 @@ class fdmFoodAndDrinkMenu {
 		if ( $this->orders ) return;
 
 
-		if ( $this->permissions->check_permission( 'ordering' ) ) {
+		if ( $this->permissions->can_execute( 'ordering' ) ) {
 			// Add custom roles and capabilities
 
 			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-item.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-pricing.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-item.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-email.php' );
+
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-notification-sms.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-cart-manager.php' );
+
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-manager.php' );
 			require_once( FDM_PLUGIN_DIR . '/includes/class-order-payments.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/class-admin-orders.php' );
-			require_once( FDM_PLUGIN_DIR . '/includes/WP_List_Table.OrdersTable.class.php' );
+
 
 			new fdmAdminOrders();
 

@@ -68,7 +68,7 @@ class fdmStructuredData {
 		if ( ! is_wp_error( $resolved ) ) $effective = array( 'display' => $resolved['display'], 'amount' => $resolved['amount'], 'sale' => ! empty( $resolved['sale'] ) );
 
 		$attributes = array();
-		if ( $fdm_controller->permissions->check_permission( 'flags' ) ) $attributes = fdm_get_item_attributes( $item_id );
+		if ( $fdm_controller->permissions->can_execute( 'flags' ) ) $attributes = fdm_get_item_attributes( $item_id );
 		$data = array(
 			'version' => self::VERSION, 'resource_id' => (int) $item_id, 'permalink' => get_permalink( $item_id ),
 			'section_ids' => wp_get_post_terms( $item_id, 'fdm-menu-section', array( 'fields' => 'ids' ) ),

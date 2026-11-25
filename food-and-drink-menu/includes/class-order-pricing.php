@@ -20,52 +20,9 @@ class fdmOrderPricing {
 	 * @return array|WP_Error
 	 */
 	public function resolve_item( $item ) {
-		$item_id = isset( $item['id'] ) ? absint( $item['id'] ) : 0;
-		$post = $item_id ? get_post( $item_id ) : null;
-
-		if ( ! $post || FDM_MENUITEM_POST_TYPE !== $post->post_type || 'publish' !== $post->post_status ) {
-			return new WP_Error( 'fdm_invalid_menu_item', __( 'This menu item is no longer available. Please refresh the menu.', 'food-and-drink-menu' ) );
-		}
-
-		$quantity_value = isset( $item['quantity'] ) ? $item['quantity'] : 1;
-		if ( ! is_scalar( $quantity_value ) || ! preg_match( '/^[0-9]+$/', (string) $quantity_value ) ) {
-			return new WP_Error( 'fdm_invalid_quantity', __( 'Choose a valid item quantity.', 'food-and-drink-menu' ) );
-		}
-		$quantity = (int) $quantity_value;
-		if ( $quantity < 1 || $quantity > self::MAX_QUANTITY ) {
-			return new WP_Error( 'fdm_invalid_quantity', __( 'Choose a valid item quantity.', 'food-and-drink-menu' ) );
-		}
-
-		$price = $this->resolve_price( $item_id, isset( $item['selected_price'] ) ? $item['selected_price'] : '' );
-		if ( is_wp_error( $price ) ) {
-			return $price;
-		}
-
-		$options = $this->resolve_options( $item_id, isset( $item['selected_options'] ) ? $item['selected_options'] : array() );
-		if ( is_wp_error( $options ) ) {
-			return $options;
-		}
-
-		$item_identifier = isset( $item['item_identifier'] ) ? sanitize_text_field( $item['item_identifier'] ) : '';
-		if ( '' === $item_identifier ) {
-			$item_identifier = $item_id . '-' . wp_generate_uuid4();
-		}
-
-		return array(
-			'id'               => $item_id,
-			'title'            => $post->post_title,
-			'item_identifier'  => $item_identifier,
-			'selected_price'   => $price['display'],
-			'selected_options' => wp_list_pluck( $options, 'id' ),
-			'note'             => isset( $item['note'] ) ? sanitize_text_field( $item['note'] ) : '',
-			'quantity'         => $quantity,
-			'pricing_version'  => self::SNAPSHOT_VERSION,
-			'snapshot_version' => self::SNAPSHOT_VERSION,
-			'price_snapshot'   => $price['amount'],
-			'title_snapshot'   => $post->post_title,
-			'option_snapshots' => $options,
-			'selected_option_snapshots' => $options,
-		);
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) { return new WP_Error( 'fdm_ordering_suspended', __( 'Ordering is currently unavailable.', 'food-and-drink-menu' ) ); }
+		return fdmOrderPricingWorker::resolve_item( $this, $item );
 	}
 
 	/**
@@ -75,24 +32,9 @@ class fdmOrderPricing {
 	 * @return array|WP_Error
 	 */
 	public function revalidate_cart_items( $items ) {
-		$canonical = array();
-
-		foreach ( (array) $items as $key => $item ) {
-			$request = is_object( $item ) ? get_object_vars( $item ) : (array) $item;
-			$resolved = $this->resolve_item( $request );
-			if ( is_wp_error( $resolved ) ) {
-				return new WP_Error( 'fdm_stale_cart', __( 'Your menu changed while you were ordering. Please review your cart and try again.', 'food-and-drink-menu' ), array( 'cause' => $resolved->get_error_code() ) );
-			}
-
-			$identifier = ! empty( $resolved['item_identifier'] ) ? $resolved['item_identifier'] : $key;
-			$canonical[ $identifier ] = new fdmCartItem( $resolved );
-		}
-
-		if ( ! $canonical ) {
-			return new WP_Error( 'fdm_empty_cart', __( 'Your cart is empty.', 'food-and-drink-menu' ) );
-		}
-
-		return $canonical;
+		global $fdm_controller;
+		if ( ! $fdm_controller->permissions->can_execute( 'ordering' ) ) { return new WP_Error( 'fdm_ordering_suspended', __( 'Ordering is currently unavailable.', 'food-and-drink-menu' ) ); }
+		return fdmOrderPricingWorker::revalidate_cart_items( $this, $items );
 	}
 
 	/**
@@ -183,7 +125,11 @@ class fdmOrderPricing {
 		return reset( $matches );
 	}
 
-	private function resolve_options( $item_id, $selected_options ) {
+	public function resolve_options( $item_id, $selected_options ) {
+		global $fdm_controller;
+		if ( $selected_options && ! $fdm_controller->permissions->can_execute( 'order_advanced' ) ) {
+			return new WP_Error( 'fdm_advanced_options_unavailable', __( 'Advanced ordering options are unavailable.', 'food-and-drink-menu' ) );
+		}
 		$definitions = get_post_meta( $item_id, '_fdm_ordering_options', true );
 		$definitions = is_array( $definitions ) ? $definitions : array();
 		$resolved = array();

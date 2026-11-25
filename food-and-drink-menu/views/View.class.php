@@ -19,17 +19,8 @@ class fdmView extends fdmBase {
 		'title'							 => 'content/title',
 		'content'						 => 'content/content',
 		'price'							 => 'content/price',
-		'cart_price'				 => 'content/cart_price',
-		'cart_header'				 => 'content/cart_header',
 		'image'							 => 'content/image',
-		'custom_fields' 		 => 'content/custom_fields',
-		'related_items' 		 => 'content/related_items',
-		'related_item_image' => 'content/related_item_image',
-		'related_item_title' => 'content/related_item_title',
-		'related_item_price' => 'content/related_item_price',
-		'ordering' 					 => 'content/add_to_cart',
 		'order_options'			 => 'content/order_options',
-		'cart_quantity'			 => 'content/cart_quantity'
 	);
 
 	/*
@@ -85,37 +76,13 @@ class fdmView extends fdmBase {
 	 */
 	function conditional_content_map() {
 		global $fdm_controller;
-	 	
-		// Source
-		$sources_permissions = $fdm_controller->permissions->check_permission( 'sources' );
-		if ( ! $fdm_controller->settings->get_setting('fdm-disable-src') and $sources_permissions ) {
-			$this->content_map['source'] = 'content/source';
-		}
-	
-		// Menu Item Flags
-		$flags_permissions = $fdm_controller->permissions->check_permission( 'flags' );
-		if ( ! $fdm_controller->settings->get_setting('fdm-disable-menu-item-flags') && $flags_permissions ) {
-			$this->content_map['flags'] = 'content/item-flags';
-		}
-	
-		// Discounted price
-		$discounts_permissions = $fdm_controller->permissions->check_permission( 'discounts' );
-		$explicit_sale = isset( $this->id ) && 'sale' === get_post_meta( $this->id, 'fdm_item_special', true );
-		if ( ! $fdm_controller->settings->get_setting('fdm-disable-price') && ( $explicit_sale || ( $discounts_permissions && empty( $fdm_controller->settings->get_setting('fdm-disable-price-discounted') ) ) ) ) {
-			$this->content_map['price'] = 'content/price-discount';
-		}
-	
-		// Specials
-		$specials_permissions = $fdm_controller->permissions->check_permission( 'specials' );
-		if ( $explicit_sale || ( ! $fdm_controller->settings->get_setting('fdm-disable-specials') && $specials_permissions ) ) {
-			$this->content_map['special'] = 'content/special';
-		}
 
-		// Ordering
-		$ordering_permissions = $fdm_controller->permissions->check_permission( 'ordering' );
-		if ( $fdm_controller->settings->get_setting('fdm-enable-ordering') && $ordering_permissions) {
-			$this->content_map['ordering'] = 'content/add_to_cart';
+		$explicit_sale = isset( $this->id ) && 'sale' === get_post_meta( $this->id, 'fdm_item_special', true );
+		if ( $explicit_sale ) {
+			$this->content_map['special'] = 'content/special';
+			if ( ! $fdm_controller->settings->get_setting( 'fdm-disable-price' ) ) $this->content_map['price'] = 'content/price-discount';
 		}
+		if ( $fdm_controller->permissions->can_execute( 'premium' ) ) fdmPremiumItem::content_map( $this );
 	}
 
 	/**
@@ -143,6 +110,11 @@ class fdmView extends fdmBase {
 	 * @param string template Type of template to load (eg - menu, menu-item)
 	 */
 	function find_template( $template ) {
+		global $fdm_controller;
+		if ( ! is_string( $template ) || ! preg_match( '#^[a-zA-Z0-9_/-]+$#', $template )
+			|| in_array( '..', explode( '/', $template ), true )
+			|| ! $fdm_controller->implementation->template_allowed( $template ) ) return false;
+		$default_template = $template;
 
 		$this->template_dirs = array(
 			get_stylesheet_directory() . '/' . FDM_TEMPLATE_DIR . '/',
@@ -160,6 +132,10 @@ class fdmView extends fdmBase {
 			if ( file_exists( $dir . $template . '.php' ) ) {
 				return $dir . $template . '.php';
 			}
+		}
+		// Theme overrides retain precedence; Helper is an exact allowlisted default.
+		if ( empty( $this->layout ) || 'classic' === $this->layout ) {
+			return $fdm_controller->implementation->template_path( $default_template );
 		}
 
 		return false;
@@ -372,49 +348,10 @@ class fdmView extends fdmBase {
 		global $fdm_controller;
 
 		echo '<style>';
-		$has_paid_styling = $fdm_controller->permissions->check_permission( 'styling' );
-		if ( $has_paid_styling ) {
-			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-menu-ordering .fdm-add-to-cart-button, .fdm-menu-ordering .fdm-options-add-to-cart-button, .fdm-style-ordering #fdm-ordering-popup-submit button, .cart-location-bottom .fdm-continue-shopping-button, .cart-location-bottom .fdm-clear-cart-button, .cart-location-bottom #fdm-order-submit-button, .cart-location-bottom #fdm-order-payment-form-div #paypal-submit, .cart-location-bottom #fdm-order-payment-form-div #stripe-submit, .fdm-ordering-bottom-bar-checkout-button { background: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-ordering-bottom-bar-toggle-inside { border-color: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') != '' ) { echo '.fdm-ordering-bottom-bar-toggle .dashicons { color: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-ordering-style-accent-hover-color') != '' ) { echo '.fdm-menu-ordering .fdm-add-to-cart-button:hover, .fdm-menu-ordering .fdm-options-add-to-cart-button:hover, .fdm-style-ordering #fdm-ordering-popup-submit button:hover, .cart-location-bottom .fdm-continue-shopping-button:hover, .cart-location-bottom .fdm-clear-cart-button:hover, .cart-location-bottom #fdm-order-submit-button:hover, .cart-location-bottom #fdm-order-payment-form-div #paypal-submit:hover, .cart-location-bottom #fdm-order-payment-form-div #stripe-submit:hover, .fdm-ordering-bottom-bar-checkout-button:hover { background: ' . $fdm_controller->settings->get_setting('fdm-ordering-style-accent-hover-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-section-title-font-family') != '' ) { echo '.fdm-section-header h3 { font-family: \'' . $fdm_controller->settings->get_setting('fdm-styling-section-title-font-family') . '\' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-section-title-font-size') != '' ) { echo '.fdm-section-header h3 { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-section-title-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-section-title-color') != '' ) { echo '.fdm-section-header h3 { color: ' . $fdm_controller->settings->get_setting('fdm-styling-section-title-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-name-font-family') != '' ) { echo '.fdm-item-title { font-family: \'' . $fdm_controller->settings->get_setting('fdm-styling-item-name-font-family') . '\' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-name-font-size') != '' ) { echo '.fdm-item-title { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-item-name-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-name-color') != '' ) { echo '.fdm-item-title { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-name-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-description-font-family') != '' ) { echo '.fdm-item-content p, .fdm-item-price { font-family: \'' . $fdm_controller->settings->get_setting('fdm-styling-item-description-font-family') . '\' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-description-font-size') != '' ) { echo '.fdm-item-content p { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-item-description-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-description-color') != '' ) { echo '.fdm-item-content p { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-description-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-price-font-size') != '' ) { echo '.fdm-item-price { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-item-price-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-item-price-color') != '' ) { echo '.fdm-item-price { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-price-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-image-width') != '' ) { echo '.fdm-item-image { width: ' . $fdm_controller->settings->get_setting('fdm-styling-image-width') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-image-width') != '' ) { echo '.fdm-item-has-image .fdm-item-panel p { padding-left: calc(' . $fdm_controller->settings->get_setting('fdm-styling-image-width') . ' + 2%) !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-image-border-size') != '' ) { echo '.fdm-item-image { border-width: ' . $fdm_controller->settings->get_setting('fdm-styling-image-border-size') . 'px !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-image-border-color') != '' ) { echo '.fdm-item-image { border-color: ' . $fdm_controller->settings->get_setting('fdm-styling-image-border-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') != '' ) { echo '.fdm-section-header { border-bottom-width: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') . 'px !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') != '' ) { echo '.fdm-section-header { border-bottom-color: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-filtering-font-family') != '' ) { echo 'h3.fdm-filtering-header, .fdm-filtering-label { font-family: \'' . $fdm_controller->settings->get_setting('fdm-styling-filtering-font-family') . '\' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-filtering-title-font-size') != '' ) { echo 'h3.fdm-filtering-header { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-filtering-title-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-filtering-title-color') != '' ) { echo 'h3.fdm-filtering-header { color: ' . $fdm_controller->settings->get_setting('fdm-styling-filtering-title-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-filtering-labels-font-size') != '' ) { echo '.fdm-filtering-label { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-filtering-labels-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-filtering-labels-color') != '' ) { echo '.fdm-filtering-label { color: ' . $fdm_controller->settings->get_setting('fdm-styling-filtering-labels-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-font-family') != '' ) { echo '.fdm-menu-sidebar-section-title, .fdm-menu-sidebar-section-description { font-family: \'' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-font-family') . '\' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-font-size') != '' ) { echo '.fdm-menu-sidebar-section-title { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-color') != '' ) { echo '.fdm-menu-sidebar-section-title { color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-color') != '' ) { echo '.fdm-sidebar-menu-style-ordering .fdm-menu-sidebar-section-title-selected { border-color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-title-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-description-font-size') != '' ) { echo '.fdm-menu-sidebar-section-description { font-size: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-description-font-size') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-description-color') != '' ) { echo '.fdm-menu-sidebar-section-description { color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-description-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-background-color') != '' ) { echo '.fdm-sidebar-mobile-expand-button { background: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-background-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-text-color') != '' ) { echo '.fdm-sidebar-mobile-expand-button { color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-text-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-background-color') != '' ) { echo '.fdm-sidebar-mobile-expand-button:hover { background: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-background-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-text-color') != '' ) { echo '.fdm-sidebar-mobile-expand-button:hover { color: ' . $fdm_controller->settings->get_setting('fdm-styling-sidebar-expand-button-hover-text-color') . ' !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') != '' ) { echo '.fdm-section-header:after { border-bottom-width: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-size') . 'px !important; }'; }
-			if ( $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') != '' ) { echo '.fdm-section-header:after { border-bottom-color: ' . $fdm_controller->settings->get_setting('fdm-styling-separating-line-color') . ' !important; }'; }
+		if ( $fdm_controller->permissions->can_execute( 'styling' ) ) {
+			$fdm_controller->implementation->call( 'styles', array( 'operation' => 'custom_styling', 'view' => $this ) );
 		}
 			if ( $fdm_controller->settings->get_setting('fdm-display-section-descriptions') != '1' ) { echo '.fdm-section-header p { display: none; }'; }
-			if ( $has_paid_styling && $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') != '' ) { echo '.fdm-icon { color: ' . $fdm_controller->settings->get_setting('fdm-styling-item-icon-color') . ' !important; }'; }
 			if ( $fdm_controller->settings->get_setting('fdm-details-lightbox') != 'disabled' && $fdm_controller->settings->get_setting('fdm-details-lightbox') != '' ) { echo '.fdm-item-title, .fdm-item-image { cursor: pointer; }'; }
 		echo  '</style>';
 	}

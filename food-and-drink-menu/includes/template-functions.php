@@ -27,7 +27,7 @@ function fdm_menu_shortcode( $atts ) {
 
 	extract( shortcode_atts( $menu_atts, $atts ) ); 
 
-	if ( $menu_prostyle and $fdm_controller->permissions->check_permission( 'styling' ) ) {
+	if ( $menu_prostyle and $fdm_controller->permissions->can_execute( 'styling' ) ) {
 		
 		add_filter( 'fdm-setting-fdm-pro-style', function() use ( $menu_prostyle ) { return $menu_prostyle; } );
 	}

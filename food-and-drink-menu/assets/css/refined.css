@@ -1,7 +1,6 @@
 .fdm-menu-title,
 .fdm-section-header h3,
-.fdm-item-panel .fdm-item-title,
-.fdm-src-panel p.src-title {
+.fdm-item-panel .fdm-item-title {
 	font-size: 180%;
 	margin-bottom: 0;
 }
