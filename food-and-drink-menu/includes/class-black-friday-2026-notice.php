@@ -60,8 +60,11 @@ class fdmBlackFriday2026Notice {
 			<img class="fdm-bf2026-icon" src="<?php echo esc_url( FDM_PLUGIN_URL . '/assets/img/fdm-icon.png' ); ?>" width="100" height="100" alt="">
 			<div class="fdm-bf2026-content">
 				<?php if ( 'premium' === $this->audience() ) : ?>
-					<p><?php esc_html_e( 'Take advantage of our Black Friday sale to upgrade to Restaurant Menu Ultimate! As a thank you for being a premium user, get your first year of Ultimate for only $130! Sale ends November 30th at 11:59:59 PM EST.', 'food-and-drink-menu' ); ?></p>
-					<p><?php esc_html_e( '<PayPal Upgrade Button>', 'food-and-drink-menu' ); ?></p>
+					<p><?php esc_html_e( 'Take advantage of our Black Friday sale to upgrade to Restaurant Menu Ultimate! As a thank you for being a premium user, get your first year of Ultimate for only $130 or €130! Sale ends November 30th 11:59:59 PM EST.', 'food-and-drink-menu' ); ?></p>
+					<p class="fdm-bf2026-actions">
+						<a class="button button-primary" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-40S1754348523761LNMC7IPY" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade (EUR)', 'food-and-drink-menu' ); ?></a>
+						<a class="button button-primary" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-8H793289WY3296336MRSSZ4I" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade (USD)', 'food-and-drink-menu' ); ?></a>
+					</p>
 				<?php else : ?>
 					<p><?php esc_html_e( "Take advantage of our Black Friday sale to upgrade to Restaurant Menu Ultimate or Premium! Use code 'BF2026' at checkout to get 20% off of the regular price.  Sale ends November 30th at 11:59:59 PM, EST.", 'food-and-drink-menu' ); ?></p>
 					<p><a class="button button-primary" href="https://www.fivestarplugins.com/plugins/five-star-restaurant-menu/?utm_source=plugin_admin_bf2026" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View Restaurant Menu Plans', 'food-and-drink-menu' ); ?></a></p>

@@ -5,7 +5,7 @@ Tags: restaurant, restaurant menu, food ordering, food menu, food delivery
 Requires at Least: 6.0
 Tested Up To: 7.1
 Requires PHP: 8.0
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -308,6 +308,10 @@ This plugin includes a wpml-config.xml file which provides compatibility with th
 - [Our Support Center](https://www.fivestarplugins.com/support-center/)
 
 == Changelog ==
+
+= 2.8.1 (2026-11-26) =
+- **IMPORTANT: If you are using the premium or ultimate version of the plugin, please make sure you also update the FSP Premium Helper plugin to version 0.3.0.**
+- Update for premium helper compatibility. 
 
 = 2.8.0 (2026-11-25) =
 - **IMPORTANT NOTE: This is release 3 of a 4-part series. Full documentation for a number of the new features is not yet available, and will be added once the 4th update in the series is completed. Please delay updating until the final update round if documentation is required.**
